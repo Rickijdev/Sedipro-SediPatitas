@@ -67,7 +67,7 @@
     .blurrable, .pet-card{ transition:none !important; }
   }
 
-  /* ---------- Header ---------- */
+  /*cabezera*/
   .site-header{
     position:sticky;
     top:0;
@@ -324,6 +324,105 @@
   .meet-link:hover, .meet-link:focus-visible{ border-color:var(--berry); }
   .meet-link:focus-visible{ outline:2px solid var(--moss-dark); outline-offset:3px; }
 
+  /* ---------- Patrocinadores ---------- */
+  .sponsors-section{
+    padding:40px 24px 120px;
+    max-width:1280px;
+    margin:0 auto;
+  }
+  .sponsors-heading{ text-align:center; max-width:640px; margin:0 auto 48px; }
+  .sponsors-heading .eyebrow{
+    color:var(--moss-dark);
+    background:rgba(67,94,66,.1);
+    margin-bottom:16px;
+  }
+  .sponsors-heading h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:clamp(1.7rem, 3.2vw, 2.35rem);
+    color:var(--moss-dark);
+    margin-bottom:12px;
+  }
+  .sponsors-heading p{ color:var(--text-soft); font-size:1.02rem; }
+
+  .sponsors-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));
+    gap:40px;
+  }
+
+  .sponsor-card{
+    background:var(--cream);
+    border:1px solid rgba(67,94,66,.25);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 8px 20px -12px rgba(var(--shadow),.35);
+  }
+
+  .sponsor-photo-frame{
+    position:relative;
+    padding:14px;
+    background:var(--moss-dark);
+  }
+  .sponsor-photo-frame .sponsor-photo{
+    width:100%;
+    height:340px;
+    object-fit:cover;
+    border-radius:4px;
+    background:var(--paper-light);
+    display:block;
+  }
+  .sponsor-pet-badge{
+    position:absolute;
+    right:28px;
+    bottom:-30px;
+    width:92px;
+    height:92px;
+    border-radius:50%;
+    background:var(--paper-light);
+    border:4px solid var(--cream);
+    box-shadow:0 6px 14px rgba(var(--shadow),.3);
+    overflow:hidden;
+  }
+  .sponsor-pet-badge img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  .sponsor-info-frame{
+    padding:44px 26px 26px;
+    border-top:1px solid rgba(67,94,66,.18);
+  }
+  .sponsor-name{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:1.15rem;
+    color:var(--moss-dark);
+    margin-bottom:4px;
+  }
+  .sponsor-role{
+    display:inline-block;
+    font-size:.75rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--berry);
+    margin-bottom:16px;
+  }
+  .sponsor-note{
+    background:var(--paper-light);
+    border:1px solid rgba(67,94,66,.2);
+    border-radius:6px;
+    padding:16px 18px;
+  }
+  .sponsor-note p{
+    font-family:var(--ff-body);
+    font-size:.94rem;
+    line-height:1.55;
+    color:var(--text-soft);
+  }
+
   /* ---------- Footer ---------- */
   .site-footer{
     background:var(--moss);
@@ -395,6 +494,7 @@
       <li><a href="#top">Inicio</a></li>
       <li><a href="#galeria">Conóceles</a></li>
       <li><a href="#contacto">Contacto</a></li>
+      <li><a href="#patrocinadores">Patrocinadores</a></li>
     </ul>
   </nav>
   <a href="#galeria" class="btn-cta">Quiero adoptar</a>
@@ -408,7 +508,7 @@
     <svg width="52" height="52" fill="currentColor" style="bottom:8%; right:15%; transform:rotate(-25deg);"><use href="#paw"/></svg>
   </div>
   <div class="hero-inner">
-    <span class="eyebrow">🐾 Adopción con nombre y apellido</span>
+
     <h1>Cada patita tiene una historia que contar</h1>
     <p class="lead">En SediPatitas no vas a encontrar fichas ni números: vas a conocer personalidades. Perros y gatos reales, esperando a quien sepa ver quiénes son.</p>
     <ul class="stat-tickets">
@@ -423,7 +523,6 @@
   <div class="gallery-heading blurrable">
     <span class="eyebrow">Conóceles</span>
     <h2>Estas patitas ya te están esperando</h2>
-    <p>Pasa el mouse sobre cada ficha para conocerlas de cerca.</p>
   </div>
 
   <div class="gallery-grid">
@@ -431,7 +530,7 @@
     <article class="pet-card blurrable" style="--rot:-2deg;">
       <span class="tape" aria-hidden="true"></span>
       <div class="photo-mat">
-        <img src="https://placedog.net/500/380" alt="Rocky, perro mestizo de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <img class="pet-photo" data-species="perro" alt="Rocky, perro mestizo de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
         <span class="stamp">¡Busco<br>hogar!</span>
       </div>
       <div class="card-body">
@@ -447,7 +546,7 @@
     <article class="pet-card blurrable" style="--rot:1.5deg;">
       <span class="tape" aria-hidden="true"></span>
       <div class="photo-mat">
-        <img src="https://cataas.com/cat?width=500&amp;height=380" alt="Luna, gata persa mestiza de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
+        <img class="pet-photo" data-species="gato" alt="Luna, gata persa mestiza de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
         <span class="stamp">¡Lista<br>para amar!</span>
       </div>
       <div class="card-body">
@@ -463,7 +562,7 @@
     <article class="pet-card blurrable" style="--rot:-1deg;">
       <span class="tape" aria-hidden="true"></span>
       <div class="photo-mat">
-        <img src="https://placedog.net/502/380" alt="Max, perro labrador mestizo de tamaño grande" loading="lazy" onerror="handleImgError(this)">
+        <img class="pet-photo" data-species="perro" alt="Max, perro labrador mestizo de tamaño grande" loading="lazy" onerror="handleImgError(this)">
         <span class="stamp">Adopción<br>urgente</span>
       </div>
       <div class="card-body">
@@ -479,7 +578,7 @@
     <article class="pet-card blurrable" style="--rot:2deg;">
       <span class="tape" aria-hidden="true"></span>
       <div class="photo-mat">
-        <img src="https://cataas.com/cat?width=500&amp;height=382" alt="Mia, gata siamesa mestiza de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <img class="pet-photo" data-species="gato" alt="Mia, gata siamesa mestiza de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
         <span class="stamp">¡Ven a<br>verme!</span>
       </div>
       <div class="card-body">
@@ -495,7 +594,7 @@
     <article class="pet-card blurrable" style="--rot:-1.5deg;">
       <span class="tape" aria-hidden="true"></span>
       <div class="photo-mat">
-        <img src="https://placedog.net/500/382" alt="Toby, cachorro mestizo de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
+        <img class="pet-photo" data-species="perro" alt="Toby, cachorro mestizo de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
         <span class="stamp">Recién<br>llegado</span>
       </div>
       <div class="card-body">
@@ -511,7 +610,7 @@
     <article class="pet-card blurrable" style="--rot:1deg;">
       <span class="tape" aria-hidden="true"></span>
       <div class="photo-mat">
-        <img src="https://cataas.com/cat?width=502&amp;height=380" alt="Coco, gata de color naranja de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <img class="pet-photo" data-species="gato" alt="Coco, gata de color naranja de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
         <span class="stamp">¡Elígeme<br>a mí!</span>
       </div>
       <div class="card-body">
@@ -527,6 +626,66 @@
   </div>
 </section>
 
+<section class="sponsors-section" id="patrocinadores">
+  <div class="sponsors-heading blurrable">
+    <span class="eyebrow">Patrocinadores</span>
+    <h2>Personas que conviven activamente con ellos</h2>
+    <p>Además de aportar, nuestros patrocinadores visitan y acompañan a las patitas. Esta es su experiencia.</p>
+  </div>
+
+  <div class="sponsors-grid">
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="1" alt="Fotografía de María Fernández, patrocinadora">
+        <span class="sponsor-pet-badge">
+          <img data-species="perro" alt="Rocky, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">María Fernández</h3>
+        <span class="sponsor-role">Patrocinadora de Rocky</span>
+        <div class="sponsor-note">
+          <p>María visita a Rocky cada fin de semana desde hace ocho meses. Cuenta que sus paseos se han vuelto la mejor parte de su semana y que la compañía de Rocky le ha dado una rutina y una calma que no tenía antes.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="2" alt="Fotografía de Jorge Salinas, patrocinador">
+        <span class="sponsor-pet-badge">
+          <img data-species="gato" alt="Luna, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Jorge Salinas</h3>
+        <span class="sponsor-role">Patrocinador de Luna</span>
+        <div class="sponsor-note">
+          <p>Jorge aporta mensualmente para el cuidado de Luna y la visita con frecuencia en el refugio. Dice que verla dormir al sol le recuerda a mantener la calma incluso en los días más ocupados.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="3" alt="Fotografía de Lucía Ramos, patrocinadora">
+        <span class="sponsor-pet-badge">
+          <img data-species="perro" alt="Max, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Lucía Ramos</h3>
+        <span class="sponsor-role">Patrocinadora de Max</span>
+        <div class="sponsor-note">
+          <p>Lucía conoció a Max hace un año y desde entonces lo visita cada semana. Asegura que su presencia protectora le ha enseñado a confiar de nuevo y que espera algún día poder adoptarlo.</p>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
 <footer class="site-footer blurrable" id="contacto">
   <a href="#top" class="logo">
     <svg width="24" height="24" fill="currentColor" aria-hidden="true"><use href="#paw"/></svg>
@@ -536,13 +695,97 @@
   <ul class="footer-links">
     <li><a href="#top">Inicio</a></li>
     <li><a href="#galeria">Conóceles</a></li>
-    <li><span>📍 Lima, Perú</span></li>
+    <li><span>📍 La libertad,Trujillo, Perú</span></li>
     <li><span>✉️ hola@sedipatitas.pe</span></li>
   </ul>
   <p class="footer-meta">© 2026 SediPatitas. Hecho con 🐾 para quienes todavía no tienen nombre de dueño.</p>
 </footer>
 
 <script>
+  /* =========================================================
+     FOTOS ESTÁTICAS — todo se edita SOLO AQUÍ.
+     Hoy son ilustraciones genéricas para no depender de ninguna
+     API externa (no se vuelven a cargar ni cambian solas).
+     Para poner una foto real más adelante, reemplaza el valor
+     por la URL de la foto (ej: "fotos/rocky.jpg").
+     ========================================================= */
+
+  // Foto genérica según especie, usada en las tarjetas de mascotas
+  // y en la insignia pequeña de cada patrocinador.
+  const GENERIC_PET_PHOTO = {
+    perro: svgDataUrl(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380">
+        <rect width="500" height="380" fill="#F4E7B6"/>
+        <g transform="translate(250,205)">
+          <ellipse cx="-118" cy="-38" rx="52" ry="72" fill="#DEA03C" transform="rotate(-18 -118 -38)"/>
+          <ellipse cx="118" cy="-38" rx="52" ry="72" fill="#DEA03C" transform="rotate(18 118 -38)"/>
+          <ellipse cx="0" cy="10" rx="132" ry="112" fill="#435E42"/>
+          <ellipse cx="0" cy="58" rx="72" ry="56" fill="#FBF6EA"/>
+          <ellipse cx="0" cy="46" rx="24" ry="18" fill="#2B2118"/>
+          <circle cx="-48" cy="-14" r="13" fill="#2B2118"/>
+          <circle cx="48" cy="-14" r="13" fill="#2B2118"/>
+        </g>
+      </svg>
+    `),
+    gato: svgDataUrl(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380">
+        <rect width="500" height="380" fill="#F4E7B6"/>
+        <g transform="translate(250,205)">
+          <polygon points="-96,-72 -140,-176 -34,-98" fill="#A24A3D"/>
+          <polygon points="96,-72 140,-176 34,-98" fill="#A24A3D"/>
+          <ellipse cx="0" cy="6" rx="124" ry="104" fill="#A24A3D"/>
+          <ellipse cx="0" cy="48" rx="60" ry="46" fill="#FBF6EA"/>
+          <polygon points="0,44 -12,26 12,26" fill="#2B2118"/>
+          <circle cx="-42" cy="-8" r="12" fill="#2B2118"/>
+          <circle cx="42" cy="-8" r="12" fill="#2B2118"/>
+          <g stroke="#2B2118" stroke-width="3" opacity="0.55">
+            <line x1="10" y1="46" x2="90" y2="34"/>
+            <line x1="10" y1="58" x2="88" y2="58"/>
+            <line x1="-10" y1="46" x2="-90" y2="34"/>
+            <line x1="-10" y1="58" x2="-88" y2="58"/>
+          </g>
+        </g>
+      </svg>
+    `)
+  };
+
+  // Foto genérica para patrocinadores (persona conviviendo con una mascota).
+  // Para asignarle una foto real a un patrocinador puntual, agrega su
+  // número (según data-sponsor) aquí; si no aparece, se usa la genérica.
+  const GENERIC_SPONSOR_PHOTO = svgDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 460">
+      <rect width="500" height="460" fill="#EAE0C8"/>
+      <circle cx="250" cy="150" r="78" fill="#324530"/>
+      <path d="M110 460 C110 320 390 320 390 460 Z" fill="#324530"/>
+      <ellipse cx="368" cy="352" rx="70" ry="56" fill="#DEA03C"/>
+      <ellipse cx="330" cy="322" rx="26" ry="34" fill="#DEA03C" transform="rotate(-20 330 322)"/>
+      <ellipse cx="404" cy="322" rx="26" ry="34" fill="#DEA03C" transform="rotate(20 404 322)"/>
+      <ellipse cx="368" cy="380" rx="38" ry="28" fill="#FBF6EA"/>
+    </svg>
+  `);
+
+  const SPONSOR_PHOTOS = {
+    // "1": "fotos/patrocinadores/maria-fernandez.jpg",
+    // "2": "fotos/patrocinadores/jorge-salinas.jpg",
+    // "3": "fotos/patrocinadores/lucia-ramos.jpg",
+  };
+
+  function svgDataUrl(svg){
+    return "data:image/svg+xml," + encodeURIComponent(svg.trim());
+  }
+
+  function loadStaticPhotos(){
+    document.querySelectorAll('img[data-species]').forEach(function(img){
+      if(!img.src){
+        img.src = GENERIC_PET_PHOTO[img.dataset.species] || '';
+      }
+    });
+    document.querySelectorAll('img[data-sponsor]').forEach(function(img){
+      img.src = SPONSOR_PHOTOS[img.dataset.sponsor] || GENERIC_SPONSOR_PHOTO;
+    });
+  }
+  loadStaticPhotos();
+
   function handleImgError(img){
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="380"><rect width="100%" height="100%" fill="#F4E7B6"/><g transform="translate(250,190) scale(3)" fill="#435E42" opacity="0.5"><ellipse cx="0" cy="14" rx="26" ry="22"/><ellipse cx="-30" cy="-16" rx="12" ry="15" transform="rotate(-20 -30 -16)"/><ellipse cx="-8" cy="-33" rx="11" ry="14" transform="rotate(-8 -8 -33)"/><ellipse cx="16" cy="-33" rx="11" ry="14" transform="rotate(8 16 -33)"/><ellipse cx="36" cy="-13" rx="12" ry="15" transform="rotate(24 36 -13)"/></g></svg>';
     img.onerror = null;
