@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#435E42">
+<title>SediPatitas — Cada patita tiene una historia</title>
+<meta name="description" content="SediPatitas: conoce perros y gatos en adopción con personalidad propia. Encuentra a tu nueva mejor amistad.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23435E42'%3E%3Cellipse cx='50' cy='65' rx='26' ry='22'/%3E%3Cellipse cx='20' cy='35' rx='12' ry='15' transform='rotate(-20 20 35)'/%3E%3Cellipse cx='42' cy='18' rx='11' ry='14' transform='rotate(-8 42 18)'/%3E%3Cellipse cx='66' cy='18' rx='11' ry='14' transform='rotate(8 66 18)'/%3E%3Cellipse cx='86' cy='38' rx='12' ry='15' transform='rotate(24 86 38)'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Fredoka:wght@500;600;700&amp;family=Karla:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2B2118;
+    --paper:#EAE0C8;
+    --paper-light:#F8F2E4;
+    --moss:#435E42;
+    --moss-dark:#324530;
+    --honey:#DEA03C;
+    --honey-light:#EDB35C;
+    --berry:#A24A3D;
+    --note:#F4E7B6;
+    --cream:#FBF6EA;
+    --text-soft:#4A4034;
+    --shadow:43,33,24;
+    --ff-display:'Fredoka', system-ui, sans-serif;
+    --ff-body:'Karla', system-ui, sans-serif;
+    --ff-hand:'Caveat', cursive;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--ff-body);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.045;
+    z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  img{ max-width:100%; display:block; }
+  a{ color:inherit; }
+  ul{ margin:0; }
+  h1,h2,h3,p{ margin:0; }
+
+  .blurrable{
+    transition:filter .5s ease, opacity .5s ease;
+  }
+  body.is-focused .blurrable{
+    filter:blur(6px) saturate(.75) brightness(.93);
+    opacity:.82;
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .blurrable, .pet-card{ transition:none !important; }
+  }
+
+  /* ---------- Header ---------- */
+  .site-header{
+    position:sticky;
+    top:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    padding:16px 40px;
+    background:var(--moss);
+    color:var(--cream);
+  }
+  .logo{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--ff-display);
+    font-size:1.5rem;
+    font-weight:700;
+    text-decoration:none;
+    color:var(--cream);
+    flex-shrink:0;
+  }
+  .logo svg{ color:var(--honey); flex-shrink:0; }
+  .logo .accent{ color:var(--honey); }
+  .site-nav{
+    display:flex;
+    gap:28px;
+    list-style:none;
+    padding:0;
+    margin:0;
+  }
+  .site-nav a{
+    text-decoration:none;
+    color:var(--cream);
+    font-weight:600;
+    font-size:.95rem;
+    opacity:.88;
+    transition:opacity .2s;
+  }
+  .site-nav a:hover, .site-nav a:focus-visible{ opacity:1; }
+  .btn-cta{
+    background:var(--honey);
+    color:var(--ink);
+    font-weight:700;
+    font-size:.88rem;
+    padding:10px 22px;
+    border-radius:24px;
+    text-decoration:none;
+    white-space:nowrap;
+    transition:transform .2s ease, background .2s ease;
+    flex-shrink:0;
+  }
+  .btn-cta:hover, .btn-cta:focus-visible{
+    background:var(--honey-light);
+    transform:translateY(-2px);
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    overflow:hidden;
+    padding:96px 24px 104px;
+    text-align:center;
+  }
+  .hero-decor{ position:absolute; inset:0; z-index:0; pointer-events:none; color:var(--moss); opacity:.09; }
+  .hero-decor svg{ position:absolute; }
+  .hero-inner{ position:relative; z-index:1; max-width:760px; margin:0 auto; }
+  .eyebrow{
+    display:inline-block;
+    font-weight:700;
+    font-size:.82rem;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:var(--berry);
+    background:rgba(162,74,61,.1);
+    padding:8px 18px;
+    border-radius:20px;
+    margin-bottom:24px;
+  }
+  .hero h1{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:clamp(2.1rem, 5vw, 3.5rem);
+    line-height:1.12;
+    margin-bottom:22px;
+    color:var(--moss-dark);
+  }
+  .hero .lead{
+    font-size:1.15rem;
+    color:var(--text-soft);
+    max-width:580px;
+    margin:0 auto 36px;
+  }
+  .stat-tickets{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:14px;
+    list-style:none;
+    padding:0;
+    margin:0;
+  }
+  .stat-tickets li{
+    background:var(--paper-light);
+    border:1.5px dashed rgba(67,94,66,.4);
+    padding:10px 18px;
+    border-radius:10px;
+    font-weight:600;
+    font-size:.88rem;
+    color:var(--moss-dark);
+  }
+
+  /* ---------- Gallery heading ---------- */
+  .gallery-section{ padding:8px 24px 0; }
+  .gallery-heading{ text-align:center; max-width:640px; margin:0 auto 56px; }
+  .gallery-heading .eyebrow{ margin-bottom:16px; }
+  .gallery-heading h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:clamp(1.7rem, 3.2vw, 2.35rem);
+    color:var(--moss-dark);
+    margin-bottom:12px;
+  }
+  .gallery-heading p{ color:var(--text-soft); font-size:1.02rem; }
+
+  /* ---------- Grid & Cards ---------- */
+  .gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+    gap:64px 40px;
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 24px 130px;
+  }
+
+  .pet-card{
+    position:relative;
+    max-width:400px;
+    width:100%;
+    margin:0 auto;
+    background:var(--paper-light);
+    border-radius:16px;
+    padding:18px 18px 26px;
+    box-shadow:0 10px 22px -10px rgba(var(--shadow),.4), 0 2px 6px rgba(var(--shadow),.15);
+    transform:rotate(var(--rot,0deg));
+    transition:transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s ease, filter .5s ease, opacity .5s ease;
+    will-change:transform, filter;
+  }
+  body.is-focused .pet-card.is-active{
+    filter:none;
+    opacity:1;
+    transform:rotate(0deg) scale(1.08) translateY(-10px);
+    box-shadow:0 34px 50px -14px rgba(var(--shadow),.5), 0 14px 26px rgba(var(--shadow),.25);
+    z-index:20;
+  }
+
+  .tape{
+    position:absolute;
+    top:-14px;
+    left:50%;
+    width:86px;
+    height:28px;
+    transform:translateX(-50%) rotate(-5deg);
+    background:linear-gradient(120deg, rgba(222,160,60,.88), rgba(222,160,60,.62));
+    box-shadow:0 3px 6px rgba(var(--shadow),.25);
+    z-index:2;
+  }
+
+  .photo-mat{ position:relative; background:var(--cream); border-radius:10px; padding:10px; }
+  .photo-mat img{
+    width:100%;
+    height:270px;
+    object-fit:cover;
+    border-radius:6px;
+    background:var(--paper);
+  }
+  .stamp{
+    position:absolute;
+    bottom:-16px;
+    right:-12px;
+    width:88px;
+    height:88px;
+    border-radius:50%;
+    background:var(--paper-light);
+    border:3px double var(--berry);
+    color:var(--berry);
+    font-weight:700;
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    line-height:1.2;
+    padding:6px;
+    transform:rotate(-12deg);
+    box-shadow:0 4px 10px rgba(var(--shadow),.2);
+    z-index:2;
+  }
+
+  .card-body{ padding-top:20px; }
+  .card-body h3{
+    font-family:var(--ff-display);
+    font-size:1.4rem;
+    font-weight:600;
+    margin-bottom:10px;
+    color:var(--moss-dark);
+  }
+  .tags{
+    list-style:none;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:0;
+    margin:0 0 16px;
+  }
+  .tags li{
+    background:rgba(67,94,66,.1);
+    color:var(--moss-dark);
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    padding:5px 11px;
+    border-radius:20px;
+  }
+  .note{
+    background:var(--note);
+    border-radius:3px 12px 12px 12px;
+    padding:14px 16px;
+    margin:0 0 18px;
+    transform:rotate(var(--rot2,0deg));
+    box-shadow:0 4px 10px rgba(var(--shadow),.12);
+  }
+  .note p{
+    font-family:var(--ff-hand);
+    font-size:1.22rem;
+    font-weight:600;
+    line-height:1.32;
+    color:var(--ink);
+  }
+  .meet-link{
+    display:inline-block;
+    font-weight:700;
+    font-size:.9rem;
+    color:var(--berry);
+    text-decoration:none;
+    border-bottom:2px solid transparent;
+    transition:border-color .25s ease;
+    border-radius:2px;
+  }
+  .meet-link:hover, .meet-link:focus-visible{ border-color:var(--berry); }
+  .meet-link:focus-visible{ outline:2px solid var(--moss-dark); outline-offset:3px; }
+
+  /* ---------- Footer ---------- */
+  .site-footer{
+    background:var(--moss);
+    color:var(--cream);
+    padding:56px 24px 32px;
+    text-align:center;
+  }
+  .site-footer .logo{ justify-content:center; margin-bottom:16px; }
+  .site-footer .tagline{
+    max-width:420px;
+    margin:0 auto 28px;
+    opacity:.92;
+    font-size:1rem;
+  }
+  .footer-links{
+    display:flex;
+    justify-content:center;
+    gap:26px;
+    list-style:none;
+    padding:0;
+    margin:0 0 28px;
+    flex-wrap:wrap;
+    font-size:.92rem;
+  }
+  .footer-links a{ color:var(--cream); text-decoration:none; font-weight:600; opacity:.85; }
+  .footer-links a:hover, .footer-links a:focus-visible{ opacity:1; }
+  .footer-links span{ opacity:.85; }
+  .footer-meta{
+    font-size:.85rem;
+    opacity:.68;
+    border-top:1px solid rgba(251,246,234,.2);
+    padding-top:24px;
+    max-width:640px;
+    margin:0 auto;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:720px){
+    .site-nav{ display:none; }
+    .site-header{ padding:14px 20px; }
+  }
+  @media (max-width:480px){
+    .logo{ font-size:1.25rem; }
+    .hero{ padding:64px 18px 76px; }
+    .btn-cta{ padding:9px 16px; font-size:.82rem; }
+    .photo-mat img{ height:230px; }
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="paw" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="65" rx="26" ry="22"/>
+    <ellipse cx="20" cy="35" rx="12" ry="15" transform="rotate(-20 20 35)"/>
+    <ellipse cx="42" cy="18" rx="11" ry="14" transform="rotate(-8 42 18)"/>
+    <ellipse cx="66" cy="18" rx="11" ry="14" transform="rotate(8 66 18)"/>
+    <ellipse cx="86" cy="38" rx="12" ry="15" transform="rotate(24 86 38)"/>
+  </symbol>
+</svg>
+
+<header class="site-header blurrable" id="top">
+  <a href="#top" class="logo">
+    <svg width="26" height="26" fill="currentColor" aria-hidden="true"><use href="#paw"/></svg>
+    Sedi<span class="accent">Patitas</span>
+  </a>
+  <nav aria-label="Principal">
+    <ul class="site-nav">
+      <li><a href="#top">Inicio</a></li>
+      <li><a href="#galeria">Conóceles</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+  </nav>
+  <a href="#galeria" class="btn-cta">Quiero adoptar</a>
+</header>
+
+<section class="hero blurrable">
+  <div class="hero-decor" aria-hidden="true">
+    <svg width="70" height="70" fill="currentColor" style="top:10%; left:6%; transform:rotate(-15deg);"><use href="#paw"/></svg>
+    <svg width="46" height="46" fill="currentColor" style="top:62%; left:11%; transform:rotate(24deg);"><use href="#paw"/></svg>
+    <svg width="90" height="90" fill="currentColor" style="top:14%; right:7%; transform:rotate(12deg);"><use href="#paw"/></svg>
+    <svg width="52" height="52" fill="currentColor" style="bottom:8%; right:15%; transform:rotate(-25deg);"><use href="#paw"/></svg>
+  </div>
+  <div class="hero-inner">
+    <span class="eyebrow">🐾 Adopción con nombre y apellido</span>
+    <h1>Cada patita tiene una historia que contar</h1>
+    <p class="lead">En SediPatitas no vas a encontrar fichas ni números: vas a conocer personalidades. Perros y gatos reales, esperando a quien sepa ver quiénes son.</p>
+    <ul class="stat-tickets">
+      <li>🐾 6 patitas en adopción</li>
+      <li>🏡 Hogares para toda la vida</li>
+      <li>💛 Sin costo de adopción</li>
+    </ul>
+  </div>
+</section>
+
+<section class="gallery-section" id="galeria">
+  <div class="gallery-heading blurrable">
+    <span class="eyebrow">Conóceles</span>
+    <h2>Estas patitas ya te están esperando</h2>
+    <p>Pasa el mouse sobre cada ficha para conocerlas de cerca.</p>
+  </div>
+
+  <div class="gallery-grid">
+
+    <article class="pet-card blurrable" style="--rot:-2deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img src="https://placedog.net/500/380" alt="Rocky, perro mestizo de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">¡Busco<br>hogar!</span>
+      </div>
+      <div class="card-body">
+        <h3>Rocky <span aria-hidden="true">🐶</span></h3>
+        <ul class="tags"><li>2 años</li><li>Mediano</li><li>Juguetón</li></ul>
+        <div class="note" style="--rot2:3deg;">
+          <p>“¡Hola! Soy Rocky. Persigo pelotas hasta que se esconde el sol y reparto besos sin pedir permiso. Busco cómplice de aventuras (y de siestas).”</p>
+        </div>
+        <a href="#contacto" class="meet-link">Quiero conocerte →</a>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:1.5deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img src="https://cataas.com/cat?width=500&amp;height=380" alt="Luna, gata persa mestiza de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">¡Lista<br>para amar!</span>
+      </div>
+      <div class="card-body">
+        <h3>Luna <span aria-hidden="true">🐱</span></h3>
+        <ul class="tags"><li>1 año</li><li>Pequeña</li><li>Tranquila</li></ul>
+        <div class="note" style="--rot2:-2.5deg;">
+          <p>“Me llamo Luna. Encuentro el rayito de sol perfecto en cualquier casa. Prometo ronronear fuerte y calentarte los pies en invierno.”</p>
+        </div>
+        <a href="#contacto" class="meet-link">Quiero conocerte →</a>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:-1deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img src="https://placedog.net/502/380" alt="Max, perro labrador mestizo de tamaño grande" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">Adopción<br>urgente</span>
+      </div>
+      <div class="card-body">
+        <h3>Max <span aria-hidden="true">🐶</span></h3>
+        <ul class="tags"><li>4 años</li><li>Grande</li><li>Protector</li></ul>
+        <div class="note" style="--rot2:2deg;">
+          <p>“Soy Max, todo un caballero (casi siempre). Me encantan los paseos largos y cuidar de los míos sin pedir nada a cambio.”</p>
+        </div>
+        <a href="#contacto" class="meet-link">Quiero conocerte →</a>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:2deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img src="https://cataas.com/cat?width=500&amp;height=382" alt="Mia, gata siamesa mestiza de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">¡Ven a<br>verme!</span>
+      </div>
+      <div class="card-body">
+        <h3>Mia <span aria-hidden="true">🐱</span></h3>
+        <ul class="tags"><li>3 años</li><li>Mediana</li><li>Curiosa</li></ul>
+        <div class="note" style="--rot2:-3deg;">
+          <p>“Soy Mia y mando aquí, aunque nadie lo sepa todavía. Exploro cada rincón nuevo y duermo justo donde menos lo esperas.”</p>
+        </div>
+        <a href="#contacto" class="meet-link">Quiero conocerte →</a>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:-1.5deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img src="https://placedog.net/500/382" alt="Toby, cachorro mestizo de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">Recién<br>llegado</span>
+      </div>
+      <div class="card-body">
+        <h3>Toby <span aria-hidden="true">🐶</span></h3>
+        <ul class="tags"><li>6 meses</li><li>Pequeño</li><li>Enérgico</li></ul>
+        <div class="note" style="--rot2:2.5deg;">
+          <p>“¡Soy Toby! Apenas estoy aprendiendo el mundo y cada día es una aventura distinta. Necesito a alguien paciente para crecer juntos.”</p>
+        </div>
+        <a href="#contacto" class="meet-link">Quiero conocerte →</a>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:1deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img src="https://cataas.com/cat?width=502&amp;height=380" alt="Coco, gata de color naranja de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">¡Elígeme<br>a mí!</span>
+      </div>
+      <div class="card-body">
+        <h3>Coco <span aria-hidden="true">🐱</span></h3>
+        <ul class="tags"><li>2 años</li><li>Mediana</li><li>Sociable</li></ul>
+        <div class="note" style="--rot2:-2deg;">
+          <p>“Me dicen Coco. Soy campeona del hilo y de las siestas de tres horas. Si tienes un sofá cómodo, ya somos mejores amigas.”</p>
+        </div>
+        <a href="#contacto" class="meet-link">Quiero conocerte →</a>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<footer class="site-footer blurrable" id="contacto">
+  <a href="#top" class="logo">
+    <svg width="24" height="24" fill="currentColor" aria-hidden="true"><use href="#paw"/></svg>
+    Sedi<span class="accent">Patitas</span>
+  </a>
+  <p class="tagline">Cada adopción es una historia nueva. Empecemos la tuya.</p>
+  <ul class="footer-links">
+    <li><a href="#top">Inicio</a></li>
+    <li><a href="#galeria">Conóceles</a></li>
+    <li><span>📍 Lima, Perú</span></li>
+    <li><span>✉️ hola@sedipatitas.pe</span></li>
+  </ul>
+  <p class="footer-meta">© 2026 SediPatitas. Hecho con 🐾 para quienes todavía no tienen nombre de dueño.</p>
+</footer>
+
+<script>
+  function handleImgError(img){
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="380"><rect width="100%" height="100%" fill="#F4E7B6"/><g transform="translate(250,190) scale(3)" fill="#435E42" opacity="0.5"><ellipse cx="0" cy="14" rx="26" ry="22"/><ellipse cx="-30" cy="-16" rx="12" ry="15" transform="rotate(-20 -30 -16)"/><ellipse cx="-8" cy="-33" rx="11" ry="14" transform="rotate(-8 -8 -33)"/><ellipse cx="16" cy="-33" rx="11" ry="14" transform="rotate(8 16 -33)"/><ellipse cx="36" cy="-13" rx="12" ry="15" transform="rotate(24 36 -13)"/></g></svg>';
+    img.onerror = null;
+    img.src = "data:image/svg+xml;base64," + btoa(svg);
+  }
+
+  document.querySelectorAll('.pet-card').forEach(function(card){
+    function activate(){
+      document.body.classList.add('is-focused');
+      card.classList.add('is-active');
+    }
+    function deactivate(){
+      document.body.classList.remove('is-focused');
+      card.classList.remove('is-active');
+    }
+    card.addEventListener('mouseenter', activate);
+    card.addEventListener('mouseleave', deactivate);
+    card.addEventListener('focusin', activate);
+    card.addEventListener('focusout', deactivate);
+  });
+</script>
+
+</body>
+</html>
