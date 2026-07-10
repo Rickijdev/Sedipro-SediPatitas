@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#4F3996">
+<title>SediPatitas — Cada patita tiene una historia</title>
+<meta name="description" content="SediPatitas: conoce perros y gatos en adopción con personalidad propia. Encuentra a tu nueva mejor amistad.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%234F3996'%3E%3Cellipse cx='50' cy='65' rx='26' ry='22'/%3E%3Cellipse cx='20' cy='35' rx='12' ry='15' transform='rotate(-20 20 35)'/%3E%3Cellipse cx='42' cy='18' rx='11' ry='14' transform='rotate(-8 42 18)'/%3E%3Cellipse cx='66' cy='18' rx='11' ry='14' transform='rotate(8 66 18)'/%3E%3Cellipse cx='86' cy='38' rx='12' ry='15' transform='rotate(24 86 38)'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Fredoka:wght@500;600;700&amp;family=Karla:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Firebase (base de datos real en la nube, compartida entre todos los dispositivos) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --ink:#192F5C;
+    --paper:#F0F4F8;
+    --paper-light:#FFFFFF;
+    --moss:#4F3996;
+    --moss-dark:#192F5C;
+    --honey:#77B8EB;
+    --honey-light:#96CDFA;
+    --berry:#7D3396;
+    --note:#FFF4E5;
+    --cream:#FFFFFF;
+    --text-soft:#4B5975;
+    --shadow:25,47,92;
+    --ff-display:'Fredoka', system-ui, sans-serif;
+    --ff-body:'Karla', system-ui, sans-serif;
+    --ff-hand:'Caveat', cursive;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--ff-body);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.045;
+    z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  img{ max-width:100%; display:block; }
+  a{ color:inherit; }
+  ul{ margin:0; }
+  h1,h2,h3,p{ margin:0; }
+
+  .blurrable{
+    transition:filter .5s ease, opacity .5s ease;
+  }
+  body.is-focused .blurrable{
+    filter:blur(6px) saturate(.75) brightness(.93);
+    opacity:.82;
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .blurrable, .pet-card{ transition:none !important; }
+  }
+
+  /*cabezera*/
+  .site-header{
+    position:sticky;
+    top:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    padding:16px 40px;
+    background:var(--moss);
+    color:var(--cream);
+  }
+  .logo{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--ff-display);
+    font-size:1.5rem;
+    font-weight:700;
+    text-decoration:none;
+    color:var(--cream);
+    flex-shrink:0;
+  }
+  .logo svg{ color:var(--honey); flex-shrink:0; }
+  .logo .accent{ color:var(--honey); }
+  .site-nav{
+    display:flex;
+    gap:28px;
+    list-style:none;
+    padding:0;
+    margin:0;
+  }
+  .site-nav a{
+    text-decoration:none;
+    color:var(--cream);
+    font-weight:600;
+    font-size:.95rem;
+    opacity:.88;
+    transition:opacity .2s;
+  }
+  .site-nav a:hover, .site-nav a:focus-visible{ opacity:1; }
+  .btn-cta{
+    background:var(--honey);
+    color:var(--ink);
+    font-weight:700;
+    font-size:.88rem;
+    padding:10px 22px;
+    border-radius:24px;
+    text-decoration:none;
+    white-space:nowrap;
+    transition:transform .2s ease, background .2s ease;
+    flex-shrink:0;
+  }
+  .btn-cta:hover, .btn-cta:focus-visible{
+    background:var(--honey-light);
+    transform:translateY(-2px);
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    overflow:hidden;
+    padding:96px 24px 104px;
+    text-align:center;
+  }
+  .hero-decor{ position:absolute; inset:0; z-index:0; pointer-events:none; color:var(--moss); opacity:.09; }
+  .hero-decor svg{ position:absolute; }
+  .hero-inner{ position:relative; z-index:1; max-width:760px; margin:0 auto; }
+  .eyebrow{
+    display:inline-block;
+    font-weight:700;
+    font-size:.82rem;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:var(--berry);
+    background:rgba(125,51,150,.1);
+    padding:8px 18px;
+    border-radius:20px;
+    margin-bottom:24px;
+  }
+  .hero h1{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:clamp(2.1rem, 5vw, 3.5rem);
+    line-height:1.12;
+    margin-bottom:22px;
+    color:var(--moss-dark);
+  }
+  .hero .lead{
+    font-size:1.15rem;
+    color:var(--text-soft);
+    max-width:580px;
+    margin:0 auto 36px;
+  }
+  .stat-tickets{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:14px;
+    list-style:none;
+    padding:0;
+    margin:0;
+  }
+  .stat-tickets li{
+    background:var(--paper-light);
+    border:1.5px dashed rgba(79,57,150,.4);
+    padding:10px 18px;
+    border-radius:10px;
+    font-weight:600;
+    font-size:.88rem;
+    color:var(--moss-dark);
+  }
+
+  /* ---------- Video informativo (hero) ---------- */
+  .hero-video{
+    margin:52px auto 0;
+    max-width:680px;
+  }
+  .hero-video .eyebrow{ margin-bottom:16px; }
+  .hero-video h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:clamp(1.4rem, 2.6vw, 1.9rem);
+    color:var(--moss-dark);
+    margin-bottom:12px;
+  }
+  .hero-video p{
+    color:var(--text-soft);
+    font-size:1rem;
+    max-width:520px;
+    margin:0 auto 26px;
+  }
+  .hero-video-frame{
+    position:relative;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 24px 48px -20px rgba(var(--shadow),.35);
+    border:6px solid var(--paper-light);
+    background:var(--moss-dark);
+  }
+  .hero-video-frame video{
+    display:block;
+    width:100%;
+    max-height:420px;
+    background:#000;
+  }
+  .hero-video-tag{
+    position:absolute;
+    top:14px;
+    left:14px;
+    background:var(--honey);
+    color:var(--ink);
+    font-weight:700;
+    font-size:.78rem;
+    padding:6px 14px;
+    border-radius:16px;
+    z-index:2;
+    pointer-events:none;
+  }
+
+  /* ---------- Gallery heading ---------- */
+  .gallery-section{ padding:8px 24px 0; }
+  .gallery-heading{ text-align:center; max-width:640px; margin:0 auto 56px; }
+  .gallery-heading .eyebrow{ margin-bottom:16px; }
+  .gallery-heading h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:clamp(1.7rem, 3.2vw, 2.35rem);
+    color:var(--moss-dark);
+    margin-bottom:12px;
+  }
+  .gallery-heading p{ color:var(--text-soft); font-size:1.02rem; }
+
+  /* ---------- Grid & Cards ---------- */
+  .gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+    gap:64px 40px;
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 24px 130px;
+  }
+
+  .pet-card{
+    position:relative;
+    max-width:400px;
+    width:100%;
+    margin:0 auto;
+    background:var(--paper-light);
+    border-radius:16px;
+    padding:18px 18px 26px;
+    box-shadow:0 10px 22px -10px rgba(var(--shadow),.4), 0 2px 6px rgba(var(--shadow),.15);
+    transform:rotate(var(--rot,0deg));
+    transition:transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s ease, filter .5s ease, opacity .5s ease;
+    will-change:transform, filter;
+  }
+  body.is-focused .pet-card.is-active{
+    filter:none;
+    opacity:1;
+    transform:rotate(0deg) scale(1.08) translateY(-10px);
+    box-shadow:0 34px 50px -14px rgba(var(--shadow),.5), 0 14px 26px rgba(var(--shadow),.25);
+    z-index:20;
+  }
+
+  .tape{
+    position:absolute;
+    top:-14px;
+    left:50%;
+    width:86px;
+    height:28px;
+    transform:translateX(-50%) rotate(-5deg);
+    background:linear-gradient(120deg, rgba(119,184,235,.88), rgba(119,184,235,.62));
+    box-shadow:0 3px 6px rgba(var(--shadow),.25);
+    z-index:2;
+  }
+
+  .photo-mat{ position:relative; background:var(--paper); border-radius:10px; padding:10px; }
+  .photo-mat img{
+    width:100%;
+    height:270px;
+    object-fit:cover;
+    border-radius:6px;
+    background:var(--paper);
+  }
+  .stamp{
+    position:absolute;
+    bottom:-16px;
+    right:-12px;
+    width:88px;
+    height:88px;
+    border-radius:50%;
+    background:var(--paper-light);
+    border:3px double var(--berry);
+    color:var(--berry);
+    font-weight:700;
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    line-height:1.2;
+    padding:6px;
+    transform:rotate(-12deg);
+    box-shadow:0 4px 10px rgba(var(--shadow),.2);
+    z-index:2;
+  }
+
+  .card-body{ padding-top:20px; }
+  .card-body h3{
+    font-family:var(--ff-display);
+    font-size:1.4rem;
+    font-weight:600;
+    margin-bottom:10px;
+    color:var(--moss-dark);
+  }
+  .tags{
+    list-style:none;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:0;
+    margin:0 0 16px;
+  }
+  .tags li{
+    background:rgba(79,57,150,.1);
+    color:var(--moss-dark);
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    padding:5px 11px;
+    border-radius:20px;
+  }
+  .note{
+    background:var(--note);
+    border-radius:3px 12px 12px 12px;
+    padding:14px 16px;
+    margin:0 0 18px;
+    transform:rotate(var(--rot2,0deg));
+    box-shadow:0 4px 10px rgba(var(--shadow),.12);
+  }
+  .note p{
+    font-family:var(--ff-hand);
+    font-size:1.22rem;
+    font-weight:600;
+    line-height:1.32;
+    color:var(--ink);
+  }
+  .meet-link{
+    display:inline-block;
+    font-weight:700;
+    font-size:.9rem;
+    font-family:inherit;
+    color:var(--berry);
+    text-decoration:none;
+    background:none;
+    border:none;
+    border-bottom:2px solid transparent;
+    padding:0;
+    cursor:pointer;
+    transition:border-color .25s ease;
+    border-radius:2px;
+  }
+  .nav-link-btn{
+    background:none;
+    border:none;
+    color:var(--cream);
+    font-family:inherit;
+    font-weight:600;
+    font-size:.95rem;
+    opacity:.88;
+    cursor:pointer;
+    padding:0;
+    transition:opacity .2s;
+  }
+  .nav-link-btn:hover, .nav-link-btn:focus-visible{ opacity:1; }
+  .meet-link:hover, .meet-link:focus-visible{ border-color:var(--berry); }
+  .meet-link:focus-visible{ outline:2px solid var(--moss-dark); outline-offset:3px; }
+
+  /* ---------- Patrocinadores ---------- */
+  .sponsors-section{
+    padding:40px 24px 120px;
+    max-width:1280px;
+    margin:0 auto;
+  }
+  .sponsors-heading{ text-align:center; max-width:640px; margin:0 auto 48px; }
+  .sponsors-heading .eyebrow{
+    color:var(--moss-dark);
+    background:rgba(79,57,150,.1);
+    margin-bottom:16px;
+  }
+  .sponsors-heading h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:clamp(1.7rem, 3.2vw, 2.35rem);
+    color:var(--moss-dark);
+    margin-bottom:12px;
+  }
+  .sponsors-heading p{ color:var(--text-soft); font-size:1.02rem; }
+
+  .sponsors-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));
+    gap:40px;
+  }
+
+  .sponsor-card{
+    background:var(--cream);
+    border:1px solid rgba(79,57,150,.25);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 8px 20px -12px rgba(var(--shadow),.35);
+  }
+
+  .sponsor-photo-frame{
+    position:relative;
+    padding:14px;
+    background:var(--moss-dark);
+  }
+  .sponsor-photo-frame .sponsor-photo{
+    width:100%;
+    height:340px;
+    object-fit:cover;
+    border-radius:4px;
+    background:var(--paper-light);
+    display:block;
+  }
+  .sponsor-pet-badge{
+    position:absolute;
+    right:28px;
+    bottom:-30px;
+    width:92px;
+    height:92px;
+    border-radius:50%;
+    background:var(--paper-light);
+    border:4px solid var(--cream);
+    box-shadow:0 6px 14px rgba(var(--shadow),.3);
+    overflow:hidden;
+  }
+  .sponsor-pet-badge img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  .sponsor-info-frame{
+    padding:44px 26px 26px;
+    border-top:1px solid rgba(79,57,150,.18);
+  }
+  .sponsor-name{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:1.15rem;
+    color:var(--moss-dark);
+    margin-bottom:4px;
+  }
+  .sponsor-role{
+    display:inline-block;
+    font-size:.75rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--berry);
+    margin-bottom:16px;
+  }
+  .sponsor-note{
+    background:var(--paper-light);
+    border:1px solid rgba(79,57,150,.2);
+    border-radius:6px;
+    padding:16px 18px;
+  }
+  .sponsor-note p{
+    font-family:var(--ff-body);
+    font-size:.94rem;
+    line-height:1.55;
+    color:var(--text-soft);
+  }
+
+  /* ---------- Footer ---------- */
+  .site-footer{
+    background:var(--moss);
+    color:var(--cream);
+    padding:56px 24px 32px;
+    text-align:center;
+  }
+  .site-footer .logo{ justify-content:center; margin-bottom:16px; }
+  .site-footer .tagline{
+    max-width:420px;
+    margin:0 auto 28px;
+    opacity:.92;
+    font-size:1rem;
+  }
+  .footer-links{
+    display:flex;
+    justify-content:center;
+    gap:26px;
+    list-style:none;
+    padding:0;
+    margin:0 0 28px;
+    flex-wrap:wrap;
+    font-size:.92rem;
+  }
+  .footer-links a{ color:var(--cream); text-decoration:none; font-weight:600; opacity:.85; }
+  .footer-links a:hover, .footer-links a:focus-visible{ opacity:1; }
+  .footer-links span{ opacity:.85; }
+  .footer-meta{
+    font-size:.85rem;
+    opacity:.68;
+    border-top:1px solid rgba(251,246,234,.2);
+    padding-top:24px;
+    max-width:640px;
+    margin:0 auto;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:720px){
+    .site-nav{ display:none; }
+    .site-header{ padding:14px 20px; }
+  }
+  @media (max-width:480px){
+    .logo{ font-size:1.25rem; }
+    .hero{ padding:64px 18px 76px; }
+    .btn-cta{ padding:9px 16px; font-size:.82rem; }
+    .photo-mat img{ height:230px; }
+  }
+
+  /* ================= Overlay base ================= */
+  .overlay{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    overflow-y:auto;
+    padding:40px 20px;
+    background:rgba(25,47,92,.55);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+  }
+  .overlay.is-open{ display:flex; animation:fadeInOverlay .35s ease; }
+  @keyframes fadeInOverlay{ from{opacity:0;} to{opacity:1;} }
+
+  /* Estos dos modales se abren ENCIMA del panel de administrador
+     (z-index:1100), así que necesitan quedar por delante. */
+  #sponsorDetailOverlay, #adminAddOverlay{ z-index:1200; }
+
+  .overlay-card{
+    position:relative;
+    width:100%;
+    max-width:560px;
+    background:var(--paper-light);
+    border-radius:20px;
+    padding:38px 34px 34px;
+    box-shadow:0 30px 60px -20px rgba(var(--shadow),.5);
+    margin:auto;
+    animation:popIn .4s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes popIn{
+    from{ opacity:0; transform:translateY(30px) scale(.96); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  .overlay-close{
+    position:absolute;
+    top:16px;
+    right:16px;
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    border:none;
+    background:rgba(79,57,150,.1);
+    color:var(--moss-dark);
+    font-size:1.1rem;
+    line-height:1;
+    cursor:pointer;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .overlay-close:hover{ background:rgba(79,57,150,.2); transform:rotate(90deg); }
+
+  /* ---- Registration header ---- */
+  .register-heading{
+    text-align:center;
+    margin-bottom:26px;
+  }
+  .register-heart-pet{
+    position:relative;
+    width:96px;
+    height:96px;
+    margin:0 auto 14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .register-heart-pet .heart-icon{
+    width:96px;
+    height:96px;
+    color:var(--berry);
+    animation:heartbeat 1.6s ease-in-out infinite;
+  }
+  .register-heart-pet .pet-emoji{
+    position:absolute;
+    font-size:2.1rem;
+    bottom:-4px;
+    right:-6px;
+    filter:drop-shadow(0 2px 4px rgba(var(--shadow),.35));
+  }
+  @keyframes heartbeat{
+    0%,100%{ transform:scale(1); }
+    15%{ transform:scale(1.14); }
+    30%{ transform:scale(1); }
+    45%{ transform:scale(1.1); }
+    60%{ transform:scale(1); }
+  }
+  .register-heading .eyebrow{
+    background:rgba(125,51,150,.1);
+    color:var(--berry);
+  }
+  .register-heading h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:1.5rem;
+    color:var(--moss-dark);
+    margin:12px 0 6px;
+  }
+  .register-heading p{ color:var(--text-soft); font-size:.95rem; }
+  .register-heading strong{ color:var(--berry); }
+
+  .register-form{ display:flex; flex-direction:column; gap:16px; margin-top:22px; }
+  .form-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .form-field{ flex:1 1 200px; display:flex; flex-direction:column; gap:6px; }
+  .form-field label{
+    font-size:.8rem;
+    font-weight:700;
+    color:var(--moss-dark);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+  }
+  .form-field input, .form-field select{
+    font-family:var(--ff-body);
+    font-size:.96rem;
+    padding:11px 14px;
+    border-radius:10px;
+    border:1.5px solid rgba(79,57,150,.25);
+    background:var(--paper);
+    color:var(--ink);
+    outline:none;
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .form-field input:focus, .form-field select:focus{
+    border-color:var(--berry);
+    box-shadow:0 0 0 3px rgba(125,51,150,.15);
+  }
+  .form-hint{ font-size:.78rem; color:var(--text-soft); margin-top:-2px; }
+
+  .register-submit{
+    margin-top:8px;
+    background:var(--moss);
+    color:var(--cream);
+    font-family:inherit;
+    font-weight:700;
+    font-size:1rem;
+    border:none;
+    padding:14px 22px;
+    border-radius:14px;
+    cursor:pointer;
+    transition:transform .2s ease, background .2s ease, box-shadow .2s ease;
+    box-shadow:0 10px 20px -8px rgba(var(--shadow),.5);
+  }
+  .register-submit:hover, .register-submit:focus-visible{
+    background:var(--berry);
+    transform:translateY(-2px);
+  }
+
+  /* ---- Success screen ---- */
+  .success-card{ text-align:center; max-width:480px; }
+  .success-frame{
+    position:relative;
+    border:3px double var(--berry);
+    border-radius:18px;
+    padding:38px 26px 30px;
+    background:linear-gradient(180deg, var(--note), var(--paper-light));
+    overflow:hidden;
+    animation:frameWobble 1.1s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes frameWobble{
+    0%{ transform:scale(.8) rotate(-3deg); opacity:0; }
+    55%{ transform:scale(1.04) rotate(1.5deg); opacity:1; }
+    75%{ transform:scale(.99) rotate(-.5deg); }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  .success-pets{
+    font-size:2.6rem;
+    margin-bottom:10px;
+    animation:bounceIn .8s ease .1s both;
+  }
+  @keyframes bounceIn{
+    0%{ transform:translateY(-16px) scale(.7); opacity:0; }
+    60%{ transform:translateY(4px) scale(1.08); opacity:1; }
+    100%{ transform:translateY(0) scale(1); }
+  }
+  .success-frame h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:1.5rem;
+    color:var(--moss-dark);
+    margin-bottom:10px;
+  }
+  .success-frame p{
+    color:var(--text-soft);
+    font-size:1rem;
+  }
+  .success-frame .highlight{ color:var(--berry); font-weight:700; }
+  .success-redirect{
+    margin-top:18px !important;
+    font-size:.8rem !important;
+    font-weight:700;
+    color:var(--moss) !important;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    opacity:0;
+    animation:fadeInHint .5s ease 1.5s forwards;
+  }
+  @keyframes fadeInHint{ to{ opacity:.75; } }
+
+  .success-check{
+    width:74px;
+    height:74px;
+    margin:22px auto 4px;
+    position:relative;
+  }
+  .success-check svg{ width:100%; height:100%; }
+  .success-check .check-circle{
+    stroke:var(--moss);
+    stroke-width:3;
+    fill:none;
+    stroke-dasharray:166;
+    stroke-dashoffset:166;
+    animation:drawCircle .6s ease-out .55s forwards;
+  }
+  .success-check .check-mark{
+    stroke:var(--moss);
+    stroke-width:4;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:48;
+    stroke-dashoffset:48;
+    animation:drawCheck .4s ease-out 1.15s forwards;
+  }
+  @keyframes drawCircle{ to{ stroke-dashoffset:0; } }
+  @keyframes drawCheck{ to{ stroke-dashoffset:0; } }
+
+  .success-close{
+    margin-top:26px;
+    background:var(--moss);
+    color:var(--cream);
+    font-family:inherit;
+    font-weight:700;
+    font-size:.95rem;
+    border:none;
+    padding:12px 26px;
+    border-radius:14px;
+    cursor:pointer;
+    transition:transform .2s ease, background .2s ease;
+  }
+  .success-close:hover{ background:var(--berry); transform:translateY(-2px); }
+
+  /* ================= Admin ================= */
+  .admin-overlay{
+    position:fixed;
+    inset:0;
+    z-index:1100;
+    display:none;
+    flex-direction:column;
+    background:var(--paper);
+    overflow-y:auto;
+  }
+  .admin-overlay.is-open{ display:flex; }
+  .admin-topbar{
+    position:sticky;
+    top:0;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:16px 32px;
+    background:var(--moss);
+    color:var(--cream);
+  }
+  .admin-topbar h2{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:1.2rem;
+  }
+  .admin-back{
+    background:rgba(255,255,255,.15);
+    color:var(--cream);
+    border:none;
+    font-family:inherit;
+    font-weight:700;
+    font-size:.85rem;
+    padding:9px 18px;
+    border-radius:20px;
+    cursor:pointer;
+    transition:background .2s ease;
+  }
+  .admin-back:hover{ background:rgba(255,255,255,.28); }
+  .admin-topbar-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .admin-add-btn{
+    background:var(--honey);
+    color:var(--ink);
+    border:none;
+    font-family:inherit;
+    font-weight:700;
+    font-size:.85rem;
+    padding:9px 18px;
+    border-radius:20px;
+    cursor:pointer;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .admin-add-btn:hover{ background:var(--honey-light); transform:translateY(-1px); }
+
+  .admin-body{ padding:36px 32px 90px; max-width:1200px; margin:0 auto; width:100%; }
+  .admin-summary{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-bottom:32px;
+  }
+  .admin-summary .chip{
+    background:var(--paper-light);
+    border:1.5px dashed rgba(79,57,150,.4);
+    padding:9px 18px;
+    border-radius:10px;
+    font-weight:700;
+    font-size:.85rem;
+    color:var(--moss-dark);
+  }
+  .admin-empty{
+    text-align:center;
+    color:var(--text-soft);
+    padding:60px 20px;
+    font-size:1rem;
+  }
+
+  .admin-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:26px;
+  }
+  .admin-card{
+    position:relative;
+    background:var(--paper-light);
+    border:1px solid rgba(79,57,150,.18);
+    border-radius:16px;
+    padding:22px 20px 24px;
+    text-align:center;
+    cursor:pointer;
+    transition:transform .4s cubic-bezier(.22,1,.36,1), box-shadow .4s ease, filter .4s ease, opacity .4s ease;
+  }
+  .admin-delete-btn{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    border:none;
+    background:rgba(125,51,150,.1);
+    color:var(--berry);
+    font-size:.95rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .2s ease, transform .2s ease;
+    z-index:6;
+  }
+  .admin-delete-btn:hover{ background:var(--berry); color:var(--cream); transform:scale(1.08); }
+  .admin-grid.is-focused .admin-card{
+    filter:blur(5px) saturate(.8) brightness(.95);
+    opacity:.8;
+  }
+  .admin-grid.is-focused .admin-card.is-active{
+    filter:none;
+    opacity:1;
+    transform:translateY(-8px) scale(1.05);
+    box-shadow:0 26px 44px -16px rgba(var(--shadow),.45);
+    z-index:5;
+  }
+  .admin-avatar{
+    width:92px;
+    height:92px;
+    border-radius:50%;
+    margin:0 auto 14px;
+    overflow:hidden;
+    background:var(--paper);
+    border:3px solid var(--honey-light);
+  }
+  .admin-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .admin-card h3{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:1.08rem;
+    color:var(--moss-dark);
+    margin-bottom:6px;
+  }
+  .admin-role{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:.8rem;
+    font-weight:700;
+    color:var(--berry);
+    background:rgba(125,51,150,.1);
+    padding:5px 12px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  .admin-meta{
+    font-size:.8rem;
+    color:var(--text-soft);
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .admin-tag{
+    display:inline-block;
+    margin-top:10px;
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    color:var(--moss-dark);
+    background:rgba(79,57,150,.1);
+    padding:4px 10px;
+    border-radius:14px;
+  }
+
+  @media (max-width:600px){
+    .overlay-card{ padding:30px 22px 26px; }
+    .form-row{ flex-direction:column; }
+    .admin-topbar{ padding:14px 18px; }
+    .admin-body{ padding:26px 18px 70px; }
+  }
+
+  /* ---- Login de administrador ---- */
+  .admin-login-card{ max-width:420px; }
+  .admin-login-card .register-form{ margin-top:24px; }
+
+  /* ---- Ficha de detalle del aportante ---- */
+  .sponsor-detail-card{
+    max-width:460px;
+    text-align:center;
+  }
+  .sponsor-detail-avatar{
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    margin:6px auto 16px;
+    overflow:hidden;
+    background:var(--paper);
+    border:4px solid var(--honey-light);
+  }
+  .sponsor-detail-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .sponsor-detail-name{
+    font-family:var(--ff-display);
+    font-weight:600;
+    font-size:1.4rem;
+    color:var(--moss-dark);
+    margin-bottom:10px;
+  }
+  .sponsor-detail-list{
+    margin:26px 0 4px;
+    text-align:left;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px 20px;
+  }
+  .sponsor-detail-list > div{
+    background:var(--paper);
+    border:1px solid rgba(79,57,150,.16);
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .sponsor-detail-list dt{
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    color:var(--berry);
+    margin-bottom:4px;
+  }
+  .sponsor-detail-list dd{
+    margin:0;
+    font-size:.94rem;
+    color:var(--ink);
+    font-weight:600;
+    word-break:break-word;
+  }
+  @media (max-width:480px){
+    .sponsor-detail-list{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="paw" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="65" rx="26" ry="22"/>
+    <ellipse cx="20" cy="35" rx="12" ry="15" transform="rotate(-20 20 35)"/>
+    <ellipse cx="42" cy="18" rx="11" ry="14" transform="rotate(-8 42 18)"/>
+    <ellipse cx="66" cy="18" rx="11" ry="14" transform="rotate(8 66 18)"/>
+    <ellipse cx="86" cy="38" rx="12" ry="15" transform="rotate(24 86 38)"/>
+  </symbol>
+</svg>
+
+<header class="site-header blurrable" id="top">
+  <a href="#top" class="logo">
+    <svg width="26" height="26" fill="currentColor" aria-hidden="true"><use href="#paw"/></svg>
+    Sedi<span class="accent">Patitas</span>
+  </a>
+  <nav aria-label="Principal">
+    <ul class="site-nav">
+      <li><a href="#top">Inicio</a></li>
+      <li><a href="#galeria">Conóceles</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+      <li><a href="#patrocinadores">Patrocinadores</a></li>
+      <li><button type="button" class="nav-link-btn" id="adminNavBtn" onclick="openAdminLogin()">Admin</button></li>
+    </ul>
+  </nav>
+  <a href="#galeria" class="btn-cta">Quiero adoptar</a>
+</header>
+
+<section class="hero blurrable">
+  <div class="hero-decor" aria-hidden="true">
+    <svg width="70" height="70" fill="currentColor" style="top:10%; left:6%; transform:rotate(-15deg);"><use href="#paw"/></svg>
+    <svg width="46" height="46" fill="currentColor" style="top:62%; left:11%; transform:rotate(24deg);"><use href="#paw"/></svg>
+    <svg width="90" height="90" fill="currentColor" style="top:14%; right:7%; transform:rotate(12deg);"><use href="#paw"/></svg>
+    <svg width="52" height="52" fill="currentColor" style="bottom:8%; right:15%; transform:rotate(-25deg);"><use href="#paw"/></svg>
+  </div>
+  <div class="hero-inner">
+
+    <h1>Cada patita tiene una historia que contar</h1>
+    <p class="lead">En SediPatitas no vas a encontrar fichas ni números: vas a conocer personalidades. Perros y gatos reales, esperando a quien sepa ver quiénes son.</p>
+    <ul class="stat-tickets">
+      <li>🐾 6 patitas en adopción</li>
+      <li>🏡 Hogares para toda la vida</li>
+      <li>💛 Sin costo de adopción</li>
+    </ul>
+
+    <div class="hero-video">
+      <span class="eyebrow">Conócenos SediPatitas</span>
+      <h2>Mira nuestro video informativo</h2>
+      <p>Te contamos quiénes somos, cómo trabajamos y por qué cada adopción cambia una vida en apenas un par de minutos.</p>
+      <div class="hero-video-frame">
+        <span class="hero-video-tag">▶ Video informativo</span>
+        <video controls preload="metadata" playsinline>
+          <source src="videoinformativo.mp4" type="video/mp4">
+          Tu navegador no soporta la reproducción de video.
+        </video>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="gallery-section" id="galeria">
+  <div class="gallery-heading blurrable">
+    <span class="eyebrow">Conóceles</span>
+    <h2>Estas patitas ya te están esperando</h2>
+  </div>
+
+  <div class="gallery-grid">
+
+    <article class="pet-card blurrable" style="--rot:-2deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img class="pet-photo" data-pet="rocky" data-species="perro" alt="Rocky, perro mestizo de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">¡Busco<br>hogar!</span>
+      </div>
+      <div class="card-body">
+        <h3>Rocky <span aria-hidden="true">🐶</span></h3>
+        <ul class="tags"><li>2 años</li><li>Mediano</li><li>Juguetón</li></ul>
+        <div class="note" style="--rot2:3deg;">
+          <p>“¡Hola! Soy Rocky. Persigo pelotas hasta que se esconde el sol y reparto besos sin pedir permiso. Busco cómplice de aventuras (y de siestas).”</p>
+        </div>
+        <button type="button" class="meet-link" onclick="openRegister('Rocky','perro')">Quiero conocerte →</button>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:1.5deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img class="pet-photo" data-pet="luna" data-species="gato" alt="Luna, gata persa mestiza de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">¡Lista<br>para amar!</span>
+      </div>
+      <div class="card-body">
+        <h3>Luna <span aria-hidden="true">🐱</span></h3>
+        <ul class="tags"><li>1 año</li><li>Pequeña</li><li>Tranquila</li></ul>
+        <div class="note" style="--rot2:-2.5deg;">
+          <p>“Me llamo Luna. Encuentro el rayito de sol perfecto en cualquier casa. Prometo ronronear fuerte y calentarte los pies en invierno.”</p>
+        </div>
+        <button type="button" class="meet-link" onclick="openRegister('Luna','gato')">Quiero conocerte →</button>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:-1deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img class="pet-photo" data-pet="max" data-species="perro" alt="Max, perro labrador mestizo de tamaño grande" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">Adopción<br>urgente</span>
+      </div>
+      <div class="card-body">
+        <h3>Max <span aria-hidden="true">🐶</span></h3>
+        <ul class="tags"><li>4 años</li><li>Grande</li><li>Protector</li></ul>
+        <div class="note" style="--rot2:2deg;">
+          <p>“Soy Max, todo un caballero (casi siempre). Me encantan los paseos largos y cuidar de los míos sin pedir nada a cambio.”</p>
+        </div>
+        <button type="button" class="meet-link" onclick="openRegister('Max','perro')">Quiero conocerte →</button>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:2deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img class="pet-photo" data-pet="mia" data-species="gato" alt="Mia, gata siamesa mestiza de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">¡Ven a<br>verme!</span>
+      </div>
+      <div class="card-body">
+        <h3>Mia <span aria-hidden="true">🐱</span></h3>
+        <ul class="tags"><li>3 años</li><li>Mediana</li><li>Curiosa</li></ul>
+        <div class="note" style="--rot2:-3deg;">
+          <p>“Soy Mia y mando aquí, aunque nadie lo sepa todavía. Exploro cada rincón nuevo y duermo justo donde menos lo esperas.”</p>
+        </div>
+        <button type="button" class="meet-link" onclick="openRegister('Mia','gato')">Quiero conocerte →</button>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:-1.5deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img class="pet-photo" data-pet="toby" data-species="perro" alt="Toby, cachorro mestizo de tamaño pequeño" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">Recién<br>llegado</span>
+      </div>
+      <div class="card-body">
+        <h3>Toby <span aria-hidden="true">🐶</span></h3>
+        <ul class="tags"><li>6 meses</li><li>Pequeño</li><li>Enérgico</li></ul>
+        <div class="note" style="--rot2:2.5deg;">
+          <p>“¡Soy Toby! Apenas estoy aprendiendo el mundo y cada día es una aventura distinta. Necesito a alguien paciente para crecer juntos.”</p>
+        </div>
+        <button type="button" class="meet-link" onclick="openRegister('Toby','perro')">Quiero conocerte →</button>
+      </div>
+    </article>
+
+    <article class="pet-card blurrable" style="--rot:1deg;">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="photo-mat">
+        <img class="pet-photo" data-pet="coco" data-species="gato" alt="Coco, gata de color naranja de tamaño mediano" loading="lazy" onerror="handleImgError(this)">
+        <span class="stamp">Si quieres eligeme<br>mau!</span>
+      </div>
+      <div class="card-body">
+        <h3>Coco <span aria-hidden="true">🐱</span></h3>
+        <ul class="tags"><li>21 años</li><li>Mediana</li><li>Mewing</li></ul>
+        <div class="note" style="--rot2:-2deg;">
+          <p>“Miau”</p>
+        </div>
+        <button type="button" class="meet-link" onclick="openRegister('Coco','gato')">Quiero conocerte →</button>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="sponsors-section" id="patrocinadores">
+  <div class="sponsors-heading blurrable">
+    <span class="eyebrow">Patrocinadores</span>
+    <h2>Personas que conviven activamente con ellos</h2>
+    <p>Además de aportar, nuestros patrocinadores visitan y acompañan a las patitas. Esta es su experiencia.</p>
+  </div>
+
+  <div class="sponsors-grid">
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="1" alt="Fotografía de Jefferson León, patrocinador">
+        <span class="sponsor-pet-badge">
+          <img data-pet="luna" data-species="gato" alt="Luna, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Jefferson León</h3>
+        <span class="sponsor-role">Patrocinador de Luna</span>
+        <div class="sponsor-note">
+          <p>Jefferson se acerca al refugio entre semana para cargar y cepillar a Luna un rato antes de volver a casa. Dice que esos minutos de calma con ella se han vuelto su manera favorita de cortar el día.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="2" alt="Fotografía de Luana Guevara, patrocinadora">
+        <span class="sponsor-pet-badge">
+          <img data-pet="coco" data-species="gato" alt="Coco, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Luana Guevara</h3>
+        <span class="sponsor-role">Patrocinadora de Coco</span>
+        <div class="sponsor-note">
+          <p>Luana conoció a Coco en una jornada de adopción y desde entonces aporta cada mes para su cuidado. Lo visita cuando puede y cuenta que su ronroneo es capaz de arreglarle cualquier mal día.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="3" alt="Fotografía de Yerson Salazar, patrocinador">
+        <span class="sponsor-pet-badge">
+          <img data-pet="rocky" data-species="perro" alt="Rocky, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Yerson Salazar</h3>
+        <span class="sponsor-role">Patrocinador de Rocky</span>
+        <div class="sponsor-note">
+          <p>Yerson es voluntario habitual de SediPatitas y siempre reserva un momento para sentarse con Rocky. Cuenta que verlo mover la cola apenas lo reconoce es la razón por la que sigue volviendo cada semana.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="4" alt="Fotografía de Ricky Julca, patrocinador">
+        <span class="sponsor-pet-badge">
+          <img data-pet="mia" data-species="gato" alt="Mia, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Ricky Julca</h3>
+        <span class="sponsor-role">Patrocinador de Mia</span>
+        <div class="sponsor-note">
+          <p>Ricky empezó alimentando gatitos de la calle y hoy patrocina el cuidado de Mia dentro del refugio. Dice que su paciencia para acercarse poco a poco le enseñó a no apurar los procesos, ni los de las personas ni los de los animales.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="5" alt="Fotografía de Jheison Ruiz, patrocinador">
+        <span class="sponsor-pet-badge">
+          <img data-pet="toby" data-species="perro" alt="Toby, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Jheison Ruiz</h3>
+        <span class="sponsor-role">Patrocinador de Toby</span>
+        <div class="sponsor-note">
+          <p>Jheison aporta para el cuidado de Toby desde que era un cachorro recién rescatado. Lo visita seguido y asegura que ver lo mucho que ha crecido y confiado le da la certeza de que cada aporte realmente vale la pena.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sponsor-card blurrable">
+      <div class="sponsor-photo-frame">
+        <img class="sponsor-photo" data-sponsor="6" alt="Fotografía de Nicol Rebaza, patrocinadora">
+        <span class="sponsor-pet-badge">
+          <img data-pet="coco" data-species="gato" alt="Coco, mascota patrocinada">
+        </span>
+      </div>
+      <div class="sponsor-info-frame">
+        <h3 class="sponsor-name">Nicol Rebaza</h3>
+        <span class="sponsor-role">Patrocinadora de Coco</span>
+        <div class="sponsor-note">
+          <p>Nicol lo encontró una noche cerca de su casa y, al enterarse de que ya tenía hogar en SediPatitas, decidió sumarse como patrocinadora de Coco. Ahora lo visita cuando puede y dice que esos ojitos atentos ya se quedaron con ella.</p>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<footer class="site-footer blurrable" id="contacto">
+  <a href="#top" class="logo">
+    <svg width="24" height="24" fill="currentColor" aria-hidden="true"><use href="#paw"/></svg>
+    Sedi<span class="accent">Patitas</span>
+  </a>
+  <p class="tagline">Cada adopción es una historia nueva. Empecemos la tuya.</p>
+  <ul class="footer-links">
+    <li><a href="#top">Inicio</a></li>
+    <li><a href="#galeria">Conóceles</a></li>
+    <li><span>📍 La libertad,Trujillo, Perú</span></li>
+    <li><span>✉️ hola@sedipatitas.pe</span></li>
+  </ul>
+  <p class="footer-meta">© 2026 SediPatitas. Hecho con 🐾 para quienes todavía no tienen nombre de dueño.</p>
+</footer>
+
+<!-- ===== Modal: Registro de patrocinador/voluntario ===== -->
+<div class="overlay" id="registerOverlay" role="dialog" aria-modal="true" aria-labelledby="registerTitle">
+  <div class="overlay-card">
+    <button type="button" class="overlay-close" aria-label="Cerrar" onclick="closeRegister()">✕</button>
+
+    <div class="register-heading">
+      <div class="register-heart-pet">
+        <svg class="heart-icon" viewBox="0 0 100 90" fill="currentColor" aria-hidden="true">
+          <path d="M50 88 C20 66 2 46 2 26 C2 8 16 -2 32 4 C42 8 48 16 50 22 C52 16 58 8 68 4 C84 -2 98 8 98 26 C98 46 80 66 50 88 Z"/>
+        </svg>
+        <span class="pet-emoji" id="registerPetEmoji">🐾</span>
+      </div>
+      <span class="eyebrow">Quiero conocerte</span>
+      <h2 id="registerTitle">Regístrate para conocer a <strong id="registerPetName">esta patita</strong></h2>
+      <p>Completa tus datos y te contactaremos para coordinar la visita, el apadrinamiento o la adopción.</p>
+    </div>
+
+    <form class="register-form" id="registerForm" onsubmit="submitRegister(event)">
+      <div class="form-row">
+        <div class="form-field">
+          <label for="regNombres">Nombres</label>
+          <input type="text" id="regNombres" name="nombres" placeholder="Ej. María José" required>
+        </div>
+        <div class="form-field">
+          <label for="regApellidos">Apellidos</label>
+          <input type="text" id="regApellidos" name="apellidos" placeholder="Ej. Torres Vega" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="regCiudad">Ciudad</label>
+          <input type="text" id="regCiudad" name="ciudad" placeholder="Ej. Trujillo" required>
+        </div>
+        <div class="form-field">
+          <label for="regCelular">Número de celular</label>
+          <input type="tel" id="regCelular" name="celular" placeholder="Ej. 987 654 321" pattern="[0-9 +]{6,15}" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="regEmail">Correo electrónico</label>
+          <input type="email" id="regEmail" name="email" placeholder="Ej. maria@correo.com" required>
+        </div>
+        <div class="form-field">
+          <label for="regGenero">Género</label>
+          <select id="regGenero" name="genero" required>
+            <option value="" disabled selected>Selecciona…</option>
+            <option value="femenino">Femenino</option>
+            <option value="masculino">Masculino</option>
+          </select>
+          <span class="form-hint">Para mostrar tu perfil en el panel de patrocinadores.</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="regTipo">¿Cómo quieres ayudar?</label>
+          <select id="regTipo" name="tipo" required>
+            <option value="" disabled selected>Selecciona…</option>
+            <option value="Patrocinador">Patrocinar (aporte mensual)</option>
+            <option value="Voluntario">Ser voluntario</option>
+            <option value="Adoptante">Adoptar</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="register-submit">Guardar registro</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Modal: Registro exitoso ===== -->
+<div class="overlay" id="successOverlay" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+  <div class="overlay-card success-card">
+    <button type="button" class="overlay-close" aria-label="Cerrar" onclick="closeSuccess()">✕</button>
+    <div class="success-frame">
+      <div class="success-pets" id="successEmoji">🐶💛</div>
+      <h2 id="successTitle">¡Tu registro se ha guardado correctamente!</h2>
+      <p>Ayudaste a <span class="highlight" id="successPetLine">una patita</span>. Nos pondremos en contacto contigo muy pronto.</p>
+      <div class="success-check" aria-hidden="true">
+        <svg viewBox="0 0 60 60">
+          <circle class="check-circle" cx="30" cy="30" r="26"/>
+          <polyline class="check-mark" points="18,31 26,39 42,21"/>
+        </svg>
+      </div>
+      <p class="success-redirect" id="successRedirect">Volviendo al inicio…</p>
+    </div>
+    <button type="button" class="success-close" onclick="closeSuccess()">Volver ahora</button>
+  </div>
+</div>
+
+<!-- ===== Login de Administrador ===== -->
+<div class="overlay" id="adminLoginOverlay" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
+  <div class="overlay-card admin-login-card">
+    <button type="button" class="overlay-close" aria-label="Cerrar" onclick="closeAdminLogin()">✕</button>
+
+    <div class="register-heading">
+      <div class="register-heart-pet">
+        <svg class="heart-icon" viewBox="0 0 100 90" fill="currentColor" aria-hidden="true">
+          <path d="M50 88 C20 66 2 46 2 26 C2 8 16 -2 32 4 C42 8 48 16 50 22 C52 16 58 8 68 4 C84 -2 98 8 98 26 C98 46 80 66 50 88 Z"/>
+        </svg>
+        <span class="pet-emoji">🔐</span>
+      </div>
+      <span class="eyebrow">Acceso restringido</span>
+      <h2 id="adminLoginTitle">Panel de administrador</h2>
+      <p>Ingresa tus credenciales para ver a los patrocinadores y voluntarios registrados.</p>
+    </div>
+
+    <form class="register-form" id="adminLoginForm" onsubmit="submitAdminLogin(event)">
+      <div class="form-field">
+        <label for="adminUser">Usuario</label>
+        <input type="text" id="adminUser" name="usuario" placeholder="admin" autocomplete="username" required>
+      </div>
+      <div class="form-field">
+        <label for="adminPass">Contraseña</label>
+        <input type="password" id="adminPass" name="clave" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <p class="form-hint" id="adminLoginError" style="color:var(--berry); font-weight:700; display:none;">Usuario o contraseña incorrectos.</p>
+      <button type="submit" class="register-submit">Ingresar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Página de Administrador ===== -->
+<div class="admin-overlay" id="adminOverlay" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+  <div class="admin-topbar">
+    <h2 id="adminTitle">Panel de administrador — Patrocinadores y voluntarios</h2>
+    <div class="admin-topbar-actions">
+      <button type="button" class="admin-add-btn" onclick="openAdminAdd()">+ Agregar</button>
+      <button type="button" class="admin-back" onclick="closeAdmin()">← Volver al sitio</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="admin-summary" id="adminSummary"></div>
+    <div class="admin-grid" id="adminGrid"></div>
+  </div>
+</div>
+
+<!-- ===== Ficha completa de un aportante ===== -->
+<div class="overlay" id="sponsorDetailOverlay" role="dialog" aria-modal="true" aria-labelledby="sponsorDetailTitle">
+  <div class="overlay-card sponsor-detail-card">
+    <button type="button" class="overlay-close" aria-label="Cerrar" onclick="closeSponsorDetail()">✕</button>
+    <div class="sponsor-detail-avatar" id="sponsorDetailAvatar"></div>
+    <h2 id="sponsorDetailTitle" class="sponsor-detail-name">—</h2>
+    <span class="admin-role" id="sponsorDetailRole">—</span>
+
+    <dl class="sponsor-detail-list">
+      <div><dt>Ciudad</dt><dd id="sponsorDetailCiudad">—</dd></div>
+      <div><dt>Celular</dt><dd id="sponsorDetailCelular">—</dd></div>
+      <div><dt>Correo</dt><dd id="sponsorDetailEmail">—</dd></div>
+      <div><dt>Género</dt><dd id="sponsorDetailGenero">—</dd></div>
+      <div><dt>Apoya a</dt><dd id="sponsorDetailPet">—</dd></div>
+      <div><dt>Registrado el</dt><dd id="sponsorDetailFecha">—</dd></div>
+    </dl>
+  </div>
+</div>
+
+<!-- ===== Agregar patrocinador/voluntario (desde el panel de admin) ===== -->
+<div class="overlay" id="adminAddOverlay" role="dialog" aria-modal="true" aria-labelledby="adminAddTitle">
+  <div class="overlay-card">
+    <button type="button" class="overlay-close" aria-label="Cerrar" onclick="closeAdminAdd()">✕</button>
+
+    <div class="register-heading">
+      <div class="register-heart-pet">
+        <svg class="heart-icon" viewBox="0 0 100 90" fill="currentColor" aria-hidden="true">
+          <path d="M50 88 C20 66 2 46 2 26 C2 8 16 -2 32 4 C42 8 48 16 50 22 C52 16 58 8 68 4 C84 -2 98 8 98 26 C98 46 80 66 50 88 Z"/>
+        </svg>
+        <span class="pet-emoji">➕</span>
+      </div>
+      <span class="eyebrow">Panel de administrador</span>
+      <h2 id="adminAddTitle">Agregar patrocinador o voluntario</h2>
+      <p>Registra manualmente a una persona que ya confirmó su apoyo.</p>
+    </div>
+
+    <form class="register-form" id="adminAddForm" onsubmit="submitAdminAdd(event)">
+      <div class="form-row">
+        <div class="form-field">
+          <label for="addNombres">Nombres</label>
+          <input type="text" id="addNombres" name="nombres" placeholder="Ej. Ana" required>
+        </div>
+        <div class="form-field">
+          <label for="addApellidos">Apellidos</label>
+          <input type="text" id="addApellidos" name="apellidos" placeholder="Ej. Gómez Ruiz" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="addCiudad">Ciudad</label>
+          <input type="text" id="addCiudad" name="ciudad" placeholder="Ej. Trujillo" required>
+        </div>
+        <div class="form-field">
+          <label for="addCelular">Número de celular</label>
+          <input type="tel" id="addCelular" name="celular" placeholder="Ej. 987 654 321" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="addEmail">Correo electrónico</label>
+          <input type="email" id="addEmail" name="email" placeholder="Ej. ana@correo.com" required>
+        </div>
+        <div class="form-field">
+          <label for="addGenero">Género</label>
+          <select id="addGenero" name="genero" required>
+            <option value="" disabled selected>Selecciona…</option>
+            <option value="femenino">Femenino</option>
+            <option value="masculino">Masculino</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="addTipo">Tipo de apoyo</label>
+          <select id="addTipo" name="tipo" required>
+            <option value="" disabled selected>Selecciona…</option>
+            <option value="Patrocinador">Patrocinador (aporte mensual)</option>
+            <option value="Voluntario">Voluntario</option>
+            <option value="Adoptante">Adoptante</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="addMascota">Mascota que apoya</label>
+          <select id="addMascota" name="mascota" required>
+            <option value="" disabled selected>Selecciona…</option>
+            <option value="Rocky|perro">Rocky 🐶</option>
+            <option value="Luna|gato">Luna 🐱</option>
+            <option value="Max|perro">Max 🐶</option>
+            <option value="Mia|gato">Mia 🐱</option>
+            <option value="Toby|perro">Toby 🐶</option>
+            <option value="Coco|gato">Coco 🐱</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="register-submit">Agregar a la lista</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const PET_PHOTOS = {
+    "rocky": "rocky.jpg",
+    "luna": "luna.jpg",
+    "max": "max.jpg",
+    "mia": "mia.jpg",
+    "toby": "toby.jpg",
+    "coco": "coco.jpg",
+  };
+const SPONSOR_PHOTOS = {
+    "1": "jefferson.jpeg",
+    "2": "luana.jpeg",
+    "3": "yeison.jpeg",
+    "4": "ricky.jpeg",
+    "5": "jheison.jpeg",
+    "6": "yaquelin.jpeg",
+  };
+
+  function svgDataUrl(svg){
+    return "data:image/svg+xml," + encodeURIComponent(svg.trim());
+  }
+
+  function loadStaticPhotos(){
+    document.querySelectorAll('img[data-species]').forEach(function(img){
+      if(img.src) return;
+      var pet = img.dataset.pet;
+      img.src = (pet && PET_PHOTOS[pet]) || GENERIC_PET_PHOTO[img.dataset.species] || '';
+    });
+    document.querySelectorAll('img[data-sponsor]').forEach(function(img){
+      img.src = SPONSOR_PHOTOS[img.dataset.sponsor] || GENERIC_SPONSOR_PHOTO;
+    });
+  }
+  loadStaticPhotos();
+
+  function handleImgError(img){
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="380"><rect width="100%" height="100%" fill="#FFF4E5"/><g transform="translate(250,190) scale(3)" fill="#4F3996" opacity="0.5"><ellipse cx="0" cy="14" rx="26" ry="22"/><ellipse cx="-30" cy="-16" rx="12" ry="15" transform="rotate(-20 -30 -16)"/><ellipse cx="-8" cy="-33" rx="11" ry="14" transform="rotate(-8 -8 -33)"/><ellipse cx="16" cy="-33" rx="11" ry="14" transform="rotate(8 16 -33)"/><ellipse cx="36" cy="-13" rx="12" ry="15" transform="rotate(24 36 -13)"/></g></svg>';
+    img.onerror = null;
+    img.src = "data:image/svg+xml;base64," + btoa(svg);
+  }
+
+  document.querySelectorAll('.pet-card').forEach(function(card){
+    function activate(){
+      document.body.classList.add('is-focused');
+      card.classList.add('is-active');
+    }
+    function deactivate(){
+      document.body.classList.remove('is-focused');
+      card.classList.remove('is-active');
+    }
+    card.addEventListener('mouseenter', activate);
+    card.addEventListener('mouseleave', deactivate);
+    card.addEventListener('focusin', activate);
+    card.addEventListener('focusout', deactivate);
+  });
+
+  /* ============================================================
+     Registro de patrocinadores / voluntarios — BASE DE DATOS REAL
+     ============================================================
+     Usa Firebase Firestore (capa gratuita) para que el registro se
+     guarde en la nube y sea visible desde CUALQUIER dispositivo,
+     no solo en el navegador donde se registró.
+
+     ESTADO: ✅ el firebaseConfig del proyecto "sedipro-cc4bc" ya está
+     pegado abajo. Para que funcione de verdad todavía tienes que
+     revisar esto en https://console.firebase.google.com (una sola
+     vez, dentro de tu proyecto):
+       1. "Compilación" → "Firestore Database" → si no existe, dale
+          "Crear base de datos" → elige la región más cercana.
+       2. Pestaña "Reglas" → pega esto y publica (regla abierta,
+          pensada para un proyecto chico; si luego quieres más
+          seguridad se puede restringir con autenticación):
+             rules_version = '2';
+             service cloud.firestore {
+               match /databases/{database}/documents {
+                 match /{document=**} { allow read, write: if true; }
+               }
+             }
+     Sin estos dos pasos, Firestore rechazará la lectura/escritura:
+     el panel de administrador se verá vacío y los formularios de
+     registro mostrarán un aviso de error al guardar (revisa la
+     consola del navegador para ver el motivo exacto si pasa esto).
+     ============================================================ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyCRll6uN662tR7JRpJM2lrZgOxt--fn9vA",
+    authDomain: "sedipro-cc4bc.firebaseapp.com",
+    projectId: "sedipro-cc4bc",
+    storageBucket: "sedipro-cc4bc.firebasestorage.app",
+    messagingSenderId: "1094719366530",
+    appId: "1:1094719366530:web:ced82b5ce748cc92c45b9b",
+    measurementId: "G-6YYFSC02S7"
+  };
+
+  let db = null;
+  let firebaseReady = false;
+  try{
+    if(firebaseConfig.apiKey !== "TU_API_KEY" && window.firebase){
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      firebaseReady = true;
+    }
+  }catch(e){
+    console.error('No se pudo inicializar Firebase', e);
+  }
+
+  const REGISTROS_COL = 'registros';
+  const META_DOC = 'meta/seedInfo';
+
+  // Patrocinadores de ejemplo. Se agregan UNA sola vez a la base de datos
+  // real (se controla con un documento "meta" para no duplicarlos ni
+  // volver a crearlos si el administrador los borra a propósito).
+  const SEED_SPONSORS = [
+    { nombres:"María", apellidos:"Fernández", ciudad:"Trujillo", celular:"—", email:"—", genero:"femenino", tipo:"Patrocinador", petName:"Rocky", petSpecies:"perro", fecha:"" },
+    { nombres:"Jorge", apellidos:"Salinas", ciudad:"Trujillo", celular:"—", email:"—", genero:"masculino", tipo:"Patrocinador", petName:"Luna", petSpecies:"gato", fecha:"" },
+    { nombres:"Lucía", apellidos:"Ramos", ciudad:"Trujillo", celular:"—", email:"—", genero:"femenino", tipo:"Patrocinador", petName:"Max", petSpecies:"perro", fecha:"" }
+  ];
+
+  // ---- Respaldo local (solo se usa si Firebase no está configurado) ----
+  const STORAGE_KEY = 'sedipatitas_registros';
+  function makeId(){
+    return 'r_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+  function localLoad(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        const seeded = SEED_SPONSORS.map(function(s){ return Object.assign({ id: makeId() }, s); });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+        return seeded;
+      }
+      const parsed = JSON.parse(raw);
+      let needsResave = false;
+      const withIds = parsed.map(function(r){
+        if(!r.id){ needsResave = true; return Object.assign({}, r, { id: makeId() }); }
+        return r;
+      });
+      if(needsResave) localStorage.setItem(STORAGE_KEY, JSON.stringify(withIds));
+      return withIds;
+    }catch(e){ console.error(e); return []; }
+  }
+  function localSaveAll(all){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); }catch(e){ console.error(e); }
+  }
+
+  // ---- API unificada: usa Firestore si está configurado, si no localStorage ----
+  async function ensureSeeded(){
+    if(!firebaseReady) return;
+    try{
+      const metaRef = db.doc(META_DOC);
+      const metaSnap = await metaRef.get();
+      if(metaSnap.exists) return; // ya se sembró antes (aunque el admin haya borrado los datos)
+
+      // Si este dispositivo ya tenía patrocinadores/voluntarios guardados
+      // localmente (de cuando la web todavía no tenía Firebase conectado),
+      // los llevamos a la nube en vez de sembrar los de ejemplo, para no
+      // perder los registros reales que ya se habían capturado aquí.
+      let inicial = SEED_SPONSORS;
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          const local = JSON.parse(raw);
+          if(Array.isArray(local) && local.length > 0) inicial = local;
+        }
+      }catch(e){ /* si algo falla, seguimos con los de ejemplo */ }
+
+      const batch = db.batch();
+      inicial.forEach(function(s){
+        const ref = db.collection(REGISTROS_COL).doc();
+        const copia = Object.assign({}, s);
+        delete copia.id; // Firestore genera su propio id, no reusamos el local
+        batch.set(ref, copia);
+      });
+      batch.set(metaRef, { done:true, fecha:new Date().toISOString() });
+      await batch.commit();
+    }catch(e){ console.error('No se pudo sembrar la base de datos', e); }
+  }
+
+  async function loadRegistros(){
+    if(firebaseReady){
+      try{
+        await ensureSeeded();
+        const snap = await db.collection(REGISTROS_COL).get();
+        return snap.docs.map(function(d){ return Object.assign({ id:d.id }, d.data()); });
+      }catch(e){
+        console.error('No se pudo leer Firestore', e);
+        return [];
+      }
+    }
+    return localLoad();
+  }
+
+  async function saveRegistro(record){
+    if(firebaseReady){
+      try{
+        await db.collection(REGISTROS_COL).add(record);
+        return true;
+      }catch(e){
+        console.error('No se pudo guardar en Firestore', e);
+        return false;
+      }
+    }
+    const all = localLoad();
+    record.id = record.id || makeId();
+    all.push(record);
+    localSaveAll(all);
+    return true;
+  }
+
+  async function deleteRegistro(id){
+    if(firebaseReady){
+      try{
+        await db.collection(REGISTROS_COL).doc(id).delete();
+        return true;
+      }catch(e){
+        console.error('No se pudo borrar en Firestore', e);
+        return false;
+      }
+    }
+    const all = localLoad().filter(function(r){ return r.id !== id; });
+    localSaveAll(all);
+    return true;
+  }
+
+  // ---- Modal: Quiero conocerte -> Registro ----
+  let currentPet = { name:"esta patita", species:"perro" };
+
+  function openRegister(petName, species){
+    currentPet = { name:petName, species:species };
+    document.getElementById('registerPetName').textContent = petName;
+    document.getElementById('registerPetEmoji').textContent = species === 'gato' ? '🐱' : '🐶';
+    document.getElementById('registerForm').reset();
+    document.getElementById('registerOverlay').classList.add('is-open');
+    document.body.classList.add('is-focused');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeRegister(){
+    document.getElementById('registerOverlay').classList.remove('is-open');
+    document.body.classList.remove('is-focused');
+    document.body.style.overflow = '';
+  }
+
+  async function submitRegister(evt){
+    evt.preventDefault();
+    const form = evt.target;
+    const submitBtn = form.querySelector('.register-submit');
+    const record = {
+      nombres: form.nombres.value.trim(),
+      apellidos: form.apellidos.value.trim(),
+      ciudad: form.ciudad.value.trim(),
+      celular: form.celular.value.trim(),
+      email: form.email.value.trim(),
+      genero: form.genero.value,
+      tipo: form.tipo.value,
+      petName: currentPet.name,
+      petSpecies: currentPet.species,
+      fecha: new Date().toISOString()
+    };
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Guardando…'; }
+    const ok = await saveRegistro(record);
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Guardar registro'; }
+    if(!ok){
+      alert('No se pudo guardar tu registro. Revisa tu conexión e inténtalo de nuevo en unos segundos.');
+      return;
+    }
+    closeRegister();
+    showSuccess(record);
+  }
+
+  // ---- Modal: Registro exitoso ----
+  let successTimer = null;
+
+  function showSuccess(record){
+    const isGato = record.petSpecies === 'gato';
+    document.getElementById('successEmoji').textContent = isGato ? '🐱💛' : '🐶💛';
+    document.getElementById('successPetLine').textContent =
+      `${isGato ? 'a una gatita' : 'a un perrito'} (${record.petName})`;
+
+    const overlay = document.getElementById('successOverlay');
+    overlay.classList.add('is-open');
+    document.body.classList.add('is-focused');
+    document.body.style.overflow = 'hidden';
+
+    // El check se dibuja solo (animación CSS) y el aviso "Volviendo al
+    // inicio…" aparece con su propio fade-in. Cerramos el modal cuando
+    // todo terminó de mostrarse.
+    if(successTimer) clearTimeout(successTimer);
+    successTimer = setTimeout(closeSuccess, 3200);
+  }
+
+  function closeSuccess(){
+    if(successTimer){ clearTimeout(successTimer); successTimer = null; }
+    document.getElementById('successOverlay').classList.remove('is-open');
+    document.body.classList.remove('is-focused');
+    document.body.style.overflow = '';
+    // Vuelve a la página principal, mostrando la sección de patitas.
+    const gallery = document.getElementById('galeria');
+    if(gallery) gallery.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // ---- Avatares genéricos por género (SVG, sin depender de archivos externos) ----
+  function genericAvatar(genero){
+    const skin = '#F0C49C';
+    const hair = genero === 'femenino' ? '#4F3996' : '#192F5C';
+    const top  = genero === 'femenino' ? '#7D3396' : '#77B8EB';
+    const hairPath = genero === 'femenino'
+      ? '<path d="M14 46 C10 20 24 4 50 4 C76 4 90 20 86 46 L78 46 C80 26 68 14 50 14 C32 14 20 26 22 46 Z"/><path d="M14 46 C12 60 16 74 22 82 L28 78 C24 68 22 56 24 46 Z"/><path d="M86 46 C88 60 84 74 78 82 L72 78 C76 68 78 56 76 46 Z"/>'
+      : '<path d="M16 42 C14 18 28 4 50 4 C72 4 86 18 84 42 L74 42 C75 24 65 14 50 14 C35 14 25 24 26 42 Z"/>';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#F0F4F8"/>
+      <circle cx="50" cy="100" r="40" fill="${top}"/>
+      <circle cx="50" cy="46" r="26" fill="${skin}"/>
+      <g fill="${hair}">${hairPath}</g>
+    </svg>`;
+    return "data:image/svg+xml;base64," + btoa(svg);
+  }
+
+  // ---- Panel de administrador ----
+  async function allRegistros(){
+    return await loadRegistros();
+  }
+
+  async function renderAdmin(){
+    const grid = document.getElementById('adminGrid');
+    const summary = document.getElementById('adminSummary');
+    grid.innerHTML = '<p class="admin-empty">Cargando patrocinadores y voluntarios…</p>';
+    summary.innerHTML = '';
+
+    const registros = await allRegistros();
+    grid.innerHTML = '';
+
+    const totalPerros = registros.filter(r => r.petSpecies === 'perro').length;
+    const totalGatos = registros.filter(r => r.petSpecies === 'gato').length;
+    summary.innerHTML = `
+      <span class="chip">👥 ${registros.length} colaboradores</span>
+      <span class="chip">🐶 ${totalPerros} apoyando perritos</span>
+      <span class="chip">🐱 ${totalGatos} apoyando gatitos</span>
+      <span class="chip">${firebaseReady ? '☁️ Base de datos en la nube' : '⚠️ Solo en este dispositivo (configura Firebase)'}</span>
+    `;
+
+    if(registros.length === 0){
+      grid.innerHTML = '<p class="admin-empty">Todavía no hay patrocinadores ni voluntarios registrados.</p>';
+      return;
+    }
+
+    registros.forEach(function(r, idx){
+      const card = document.createElement('article');
+      card.className = 'admin-card';
+      card.innerHTML = `
+        <button type="button" class="admin-delete-btn" title="Eliminar" aria-label="Eliminar a ${r.nombres} ${r.apellidos}">🗑</button>
+        <div class="admin-avatar"><img src="${genericAvatar(r.genero)}" alt="Avatar genérico de ${r.genero === 'femenino' ? 'mujer' : 'hombre'}"></div>
+        <h3>${r.nombres} ${r.apellidos}</h3>
+        <span class="admin-role">${r.tipo === 'Voluntario' ? '🤝 Voluntario' : r.tipo === 'Adoptante' ? '🏡 Adoptante' : '💛 Patrocinador'}</span>
+        <div class="admin-meta">
+          <span>📍 ${r.ciudad || '—'}</span>
+          <span>📱 ${r.celular || '—'}</span>
+        </div>
+        <span class="admin-tag">${r.petSpecies === 'gato' ? '🐱' : '🐶'} Apoya a ${r.petName}</span>
+      `;
+      card.addEventListener('mouseenter', function(){
+        grid.classList.add('is-focused');
+        card.classList.add('is-active');
+      });
+      card.addEventListener('mouseleave', function(){
+        grid.classList.remove('is-focused');
+        card.classList.remove('is-active');
+      });
+      card.addEventListener('click', function(){ openSponsorDetail(r); });
+      card.querySelector('.admin-delete-btn').addEventListener('click', async function(evt){
+        evt.stopPropagation();
+        const ok = confirm(`¿Eliminar a ${r.nombres} ${r.apellidos} de la lista?`);
+        if(ok){
+          await deleteRegistro(r.id);
+          renderAdmin();
+        }
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // ---- Ficha completa de un aportante ----
+  function openSponsorDetail(r){
+    document.getElementById('sponsorDetailAvatar').innerHTML =
+      `<img src="${genericAvatar(r.genero)}" alt="Avatar genérico de ${r.genero === 'femenino' ? 'mujer' : 'hombre'}">`;
+    document.getElementById('sponsorDetailTitle').textContent = `${r.nombres} ${r.apellidos}`;
+    document.getElementById('sponsorDetailRole').textContent =
+      r.tipo === 'Voluntario' ? '🤝 Voluntario' : r.tipo === 'Adoptante' ? '🏡 Adoptante' : '💛 Patrocinador';
+    document.getElementById('sponsorDetailCiudad').textContent = r.ciudad || 'No disponible';
+    document.getElementById('sponsorDetailCelular').textContent = r.celular || 'No disponible';
+    document.getElementById('sponsorDetailEmail').textContent = r.email || 'No disponible';
+    document.getElementById('sponsorDetailGenero').textContent = r.genero === 'femenino' ? 'Femenino' : 'Masculino';
+    document.getElementById('sponsorDetailPet').textContent =
+      `${r.petSpecies === 'gato' ? '🐱' : '🐶'} ${r.petName}`;
+    document.getElementById('sponsorDetailFecha').textContent = r.fecha
+      ? new Date(r.fecha).toLocaleDateString('es-PE', { year:'numeric', month:'long', day:'numeric' })
+      : 'No disponible';
+
+    document.getElementById('sponsorDetailOverlay').classList.add('is-open');
+  }
+
+  function closeSponsorDetail(){
+    document.getElementById('sponsorDetailOverlay').classList.remove('is-open');
+  }
+
+  // ---- Acceso al panel de administrador (usuario/contraseña) ----
+  // Nota: esto es solo una validación del lado del cliente para uso interno;
+  // no reemplaza un sistema de autenticación real con backend.
+  const ADMIN_CREDENTIALS = { usuario: 'admin', clave: 'patitas2026' };
+
+  function openAdminLogin(){
+    document.getElementById('adminLoginForm').reset();
+    document.getElementById('adminLoginError').style.display = 'none';
+    document.getElementById('adminLoginOverlay').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAdminLogin(){
+    document.getElementById('adminLoginOverlay').classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  function submitAdminLogin(evt){
+    evt.preventDefault();
+    const form = evt.target;
+    const usuario = form.usuario.value.trim();
+    const clave = form.clave.value;
+    const errorMsg = document.getElementById('adminLoginError');
+
+    if(usuario === ADMIN_CREDENTIALS.usuario && clave === ADMIN_CREDENTIALS.clave){
+      errorMsg.style.display = 'none';
+      closeAdminLogin();
+      openAdmin();
+    } else {
+      errorMsg.style.display = 'block';
+    }
+  }
+
+  function openAdmin(){
+    renderAdmin();
+    document.getElementById('adminOverlay').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAdmin(){
+    document.getElementById('adminOverlay').classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  // ---- Agregar patrocinador/voluntario desde el panel de admin ----
+  function openAdminAdd(){
+    document.getElementById('adminAddForm').reset();
+    document.getElementById('adminAddOverlay').classList.add('is-open');
+  }
+
+  function closeAdminAdd(){
+    document.getElementById('adminAddOverlay').classList.remove('is-open');
+  }
+
+  async function submitAdminAdd(evt){
+    evt.preventDefault();
+    const form = evt.target;
+    const submitBtn = form.querySelector('.register-submit');
+    const [petName, petSpecies] = form.mascota.value.split('|');
+    const record = {
+      nombres: form.nombres.value.trim(),
+      apellidos: form.apellidos.value.trim(),
+      ciudad: form.ciudad.value.trim(),
+      celular: form.celular.value.trim(),
+      email: form.email.value.trim(),
+      genero: form.genero.value,
+      tipo: form.tipo.value,
+      petName: petName,
+      petSpecies: petSpecies,
+      fecha: new Date().toISOString()
+    };
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Agregando…'; }
+    const ok = await saveRegistro(record);
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Agregar a la lista'; }
+    if(!ok){
+      alert('No se pudo guardar en la base de datos. Verifica tu conexión e inténtalo de nuevo.');
+      return;
+    }
+    closeAdminAdd();
+    renderAdmin();
+  }
+
+  // Cerrar overlays con la tecla Escape
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    if(document.getElementById('registerOverlay').classList.contains('is-open')) closeRegister();
+    if(document.getElementById('successOverlay').classList.contains('is-open')) closeSuccess();
+    if(document.getElementById('sponsorDetailOverlay').classList.contains('is-open')) closeSponsorDetail();
+    if(document.getElementById('adminAddOverlay').classList.contains('is-open')) closeAdminAdd();
+    if(document.getElementById('adminLoginOverlay').classList.contains('is-open')) closeAdminLogin();
+    if(document.getElementById('adminOverlay').classList.contains('is-open')) closeAdmin();
+  });
+</script>
+
+</body>
+</html>
